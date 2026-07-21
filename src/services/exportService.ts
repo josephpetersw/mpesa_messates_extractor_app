@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import { Paths, File } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { MpesaDbMessage } from '../database/queries';
 
@@ -9,12 +9,12 @@ export async function exportToCsv(messages: MpesaDbMessage[]) {
   ).join('\n');
   
   const csvContent = header + rows;
-  const fileUri = `${FileSystem.cacheDirectory}mpesa_export_${Date.now()}.csv`;
-  
-  await FileSystem.writeAsStringAsync(fileUri, csvContent, { encoding: FileSystem.EncodingType.UTF8 });
+  const file = new File(Paths.cache, `mpesa_export_${Date.now()}.csv`);
+  file.create(); // ensure it exists or create it
+  file.write(csvContent);
   
   if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(fileUri, {
+    await Sharing.shareAsync(file.uri, {
       mimeType: 'text/csv',
       dialogTitle: 'Export MPESA Messages CSV',
       UTI: 'public.comma-separated-values-text'
@@ -27,12 +27,12 @@ export async function exportToTxt(messages: MpesaDbMessage[]) {
     `Date: ${new Date(msg.date).toLocaleString()}\nType: ${msg.transaction_type}\nAmount: Ksh ${msg.amount}\nName: ${msg.parsed_name}\nNumber: ${msg.parsed_number}\nSource: ${msg.source}\nOriginal SMS:\n${msg.original_body}\n-------------------------\n`
   ).join('\n');
   
-  const fileUri = `${FileSystem.cacheDirectory}mpesa_export_${Date.now()}.txt`;
-  
-  await FileSystem.writeAsStringAsync(fileUri, txtContent, { encoding: FileSystem.EncodingType.UTF8 });
+  const file = new File(Paths.cache, `mpesa_export_${Date.now()}.txt`);
+  file.create();
+  file.write(txtContent);
   
   if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(fileUri, {
+    await Sharing.shareAsync(file.uri, {
       mimeType: 'text/plain',
       dialogTitle: 'Export MPESA Messages TXT',
       UTI: 'public.plain-text'

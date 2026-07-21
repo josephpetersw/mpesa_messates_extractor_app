@@ -18,7 +18,10 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.READ_SMS"]
+      "permissions": [
+        "android.permission.READ_SMS"
+      ],
+      "package": "com.zestra_capital.mpesa_messates_extractor_app"
     },
     "web": {
       "output": "static",
