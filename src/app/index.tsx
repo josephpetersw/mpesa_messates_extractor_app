@@ -8,9 +8,8 @@ import { MpesaDbMessage, insertMessages, getStats, getMessages, getAllMessages }
 import { parseMpesaMessage } from '../services/mpesaParser';
 import { exportToCsv, exportToTxt } from '../services/exportService';
 
-const ITEMS_PER_PAGE = 20;
-
 export default function HomeScreen() {
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [db, setDb] = useState<SQLite.SQLiteDatabase | null>(null);
   const [loading, setLoading] = useState(true);
   const [extracting, setExtracting] = useState(false);
@@ -37,11 +36,11 @@ export default function HomeScreen() {
     setup();
   }, []);
 
-  const loadData = async (database: SQLite.SQLiteDatabase, pageNum: number) => {
+  const loadData = async (database: SQLite.SQLiteDatabase, pageNum: number, perPage: number = itemsPerPage) => {
     const s = await getStats(database);
     setStats(s);
     
-    const msgs = await getMessages(database, ITEMS_PER_PAGE, pageNum * ITEMS_PER_PAGE);
+    const msgs = await getMessages(database, perPage, pageNum * perPage);
     setMessages(msgs);
     setPage(pageNum);
   };
@@ -100,16 +99,40 @@ export default function HomeScreen() {
     }
   };
 
-  const handleExportCsv = async () => {
+  const handleExportCsv = () => {
     if (!db) return;
-    const all = await getAllMessages(db);
-    await exportToCsv(all);
+    Alert.alert(
+      "Export CSV",
+      "Are you sure you want to export all transactions to a CSV file?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Export",
+          onPress: async () => {
+            const all = await getAllMessages(db);
+            await exportToCsv(all);
+          }
+        }
+      ]
+    );
   };
 
-  const handleExportTxt = async () => {
+  const handleExportTxt = () => {
     if (!db) return;
-    const all = await getAllMessages(db);
-    await exportToTxt(all);
+    Alert.alert(
+      "Export TXT",
+      "Are you sure you want to export all transactions to a TXT file?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Export",
+          onPress: async () => {
+            const all = await getAllMessages(db);
+            await exportToTxt(all);
+          }
+        }
+      ]
+    );
   };
 
   if (loading) {
@@ -214,12 +237,29 @@ export default function HomeScreen() {
             <Text className="text-gray-500 dark:text-gray-400">Page {page + 1}</Text>
             
             <TouchableOpacity 
-              disabled={messages.length < ITEMS_PER_PAGE} 
+              disabled={messages.length < itemsPerPage} 
               onPress={() => db && loadData(db, page + 1)}
-              className={`py-2 px-4 rounded ${messages.length < ITEMS_PER_PAGE ? 'bg-gray-200' : 'bg-primary'}`}
+              className={`py-2 px-4 rounded ${messages.length < itemsPerPage ? 'bg-gray-200' : 'bg-primary'}`}
             >
-              <Text className={messages.length < ITEMS_PER_PAGE ? 'text-gray-400' : 'text-white'}>Next</Text>
+              <Text className={messages.length < itemsPerPage ? 'text-gray-400' : 'text-white'}>Next</Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Per Page Selection */}
+          <View className="flex-row justify-center items-center mt-4 gap-2">
+            <Text className="text-gray-500 text-xs">Items per page:</Text>
+            {[10, 20, 50, 100].map(val => (
+              <TouchableOpacity 
+                key={val}
+                onPress={() => {
+                  setItemsPerPage(val);
+                  if (db) loadData(db, 0, val);
+                }}
+                className={`py-1 px-3 rounded ${itemsPerPage === val ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-800'}`}
+              >
+                <Text className={`text-xs ${itemsPerPage === val ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{val}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </ScrollView>
