@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Paths, Directory } from 'expo-file-system';
+import * as Updates from 'expo-updates';
 
 export default function MoreScreen() {
   const [clearingCache, setClearingCache] = useState(false);
@@ -31,13 +32,51 @@ export default function MoreScreen() {
     }
   };
 
-  const handleCheckUpdates = () => {
+  const handleCheckUpdates = async () => {
     setCheckingUpdates(true);
-    // Simulate checking for updates
-    setTimeout(() => {
+    try {
+      if (__DEV__) {
+        Alert.alert('Info', 'OTA updates are not available in development mode.');
+        return;
+      }
+      
+      const update = await Updates.checkForUpdateAsync();
+      
+      if (update.isAvailable) {
+        Alert.alert(
+          'Update Available',
+          'A new version is available. Would you like to download it now?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Download', 
+              onPress: async () => {
+                setCheckingUpdates(true);
+                try {
+                  await Updates.fetchUpdateAsync();
+                  Alert.alert(
+                    'Update Downloaded',
+                    'The app will now restart to apply the update.',
+                    [{ text: 'Restart', onPress: () => Updates.reloadAsync() }]
+                  );
+                } catch (e) {
+                  Alert.alert('Error', 'Failed to download the update.');
+                } finally {
+                  setCheckingUpdates(false);
+                }
+              } 
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Up to Date', 'You are running the latest version of the app.');
+      }
+    } catch (error) {
+      console.error('Update check failed:', error);
+      Alert.alert('Error', 'Failed to check for updates. Please try again later.');
+    } finally {
       setCheckingUpdates(false);
-      Alert.alert('Up to Date', 'You are running the latest version of the app.');
-    }, 1500);
+    }
   };
 
   return (

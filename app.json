@@ -21,6 +21,9 @@
       "permissions": [
         "android.permission.READ_SMS",
         "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_SMS",
+        "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
       ],
       "package": "com.zestra_capital.mpesa_messates_extractor_app"
@@ -51,6 +54,12 @@
       "eas": {
         "projectId": "ef4ef049-2038-4610-b2c9-cefa4abc782a"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ef4ef049-2038-4610-b2c9-cefa4abc782a"
     }
   }
 }
