@@ -31,19 +31,32 @@ Because this project utilizes a **custom native module** for SMS extraction, it 
    npx expo run:android
    ```
 
-## EAS Build
+## Building & Deployment
 
-This project is fully configured for EAS (Expo Application Services). 
+This project is fully configured for EAS (Expo Application Services) to handle both cloud builds and Over-The-Air (OTA) updates.
 
-To build an APK for Android in the cloud:
+### 1. Cloud Builds (EAS Build)
+
+To build an APK for Android in the cloud that you can install on your device for testing:
 ```bash
 eas build --profile preview --platform android
 ```
 
-To submit to the Google Play Store:
+To build an AAB and submit directly to the Google Play Store:
 ```bash
+eas build --profile production --platform android
 eas submit -p android
 ```
+
+### 2. Over-The-Air Updates (EAS Update)
+
+You can push JavaScript and asset changes directly to your users' devices without going through the app store review process.
+
+To publish an OTA update:
+```bash
+eas update --branch preview --message "Your update message here"
+```
+Users will automatically receive the update the next time they restart the app, or they can trigger it manually from the "More > Check for Updates" tab.
 
 ## Tech Stack
 
