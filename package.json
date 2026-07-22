@@ -1,9 +1,10 @@
 {
-  "name": "mpesa_messates_extractor_app",
+  "name": "sms_extractor",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~57.0.7",
+    "@react-native-community/datetimepicker": "9.1.0",
     "expo": "~57.0.7",
     "expo-constants": "~57.0.6",
     "expo-device": "~57.0.1",
