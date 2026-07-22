@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SMS Extractor",
-    "slug": "sms_extractor",
+    "slug": "mpesa_messates_extractor_app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
