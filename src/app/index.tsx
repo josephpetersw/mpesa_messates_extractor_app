@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, Alert, ActivityIndicator, PermissionsAndroid, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SQLite from 'expo-sqlite';
 import SmsExtractorModule from '../../modules/sms-extractor/src/SmsExtractorModule';
@@ -50,11 +50,24 @@ export default function HomeScreen() {
     if (!db) return;
     setExtracting(true);
     try {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.READ_SMS,
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        ]);
+        if (granted['android.permission.READ_SMS'] !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert("Permission Denied", "SMS permission is required to extract messages.");
+          setExtracting(false);
+          return;
+        }
+      }
+
       // 1. Call native module
       const rawMessages = await SmsExtractorModule.getMpesaMessages();
       
       if (!rawMessages || rawMessages.length === 0) {
-        Alert.alert("Info", "No MPESA messages found or permission denied.");
+        Alert.alert("Info", "No MPESA messages found.");
         setExtracting(false);
         return;
       }
@@ -108,7 +121,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f4f7ff] dark:bg-black">
+    <SafeAreaView className="flex-1 bg-white dark:bg-black">
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {/* Header */}
         <Text className="text-3xl font-bold text-black dark:text-white mb-6">MPESA Dashboard</Text>
@@ -151,7 +164,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Table */}
-        <View className="bg-white dark:bg-[#1a2941] rounded-xl overflow-hidden shadow-3xl p-4">
+        <View className="bg-white dark:bg-dark rounded-xl overflow-hidden shadow-3xl p-4">
           <Text className="text-lg font-bold text-black dark:text-white mb-4">Recent Transactions</Text>
           
           <View className="flex-row border-b border-gray-200 dark:border-gray-700 pb-2 mb-2">
@@ -219,7 +232,7 @@ export default function HomeScreen() {
         onRequestClose={() => setModalVisible(false)}
       >
         <View className="flex-1 justify-center items-center bg-black/50 p-4">
-          <View className="bg-white dark:bg-[#1a2941] rounded-2xl w-full p-6 shadow-3xl">
+          <View className="bg-white dark:bg-dark rounded-2xl w-full p-6 shadow-3xl">
             <Text className="text-xl font-bold mb-4 text-black dark:text-white">Transaction Details</Text>
             
             {selectedMsg && (
