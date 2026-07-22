@@ -8,11 +8,13 @@ class SmsExtractorModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("SmsExtractor")
 
-    AsyncFunction("getMpesaMessages") { ->
+    AsyncFunction("getMpesaMessages") { fromDateMs: Long, toDateMs: Long ->
       val context = appContext.reactContext ?: return@AsyncFunction emptyList<Map<String, Any>>()
       
       val mpesaMessages = mutableListOf<Map<String, Any>>()
       val projection = arrayOf("_id", "address", "date", "body", "type")
+      val selection = "address = ? AND date >= ? AND date <= ?"
+      val selectionArgs = arrayOf("MPESA", fromDateMs.toString(), toDateMs.toString())
       
       // Try Phone SMS
       val phoneUri = Uri.parse("content://sms/")
@@ -20,8 +22,8 @@ class SmsExtractorModule : Module() {
         context.contentResolver.query(
             phoneUri,
             projection,
-            "address = ?", // filter by MPESA
-            arrayOf("MPESA"),
+            selection,
+            selectionArgs,
             "date DESC"
         )?.use { cursor ->
             val idIndex = cursor.getColumnIndex("_id")
@@ -51,8 +53,8 @@ class SmsExtractorModule : Module() {
         context.contentResolver.query(
             simUri,
             projection,
-            "address = ?",
-            arrayOf("MPESA"),
+            selection,
+            selectionArgs,
             "date DESC"
         )?.use { cursor ->
             val idIndex = cursor.getColumnIndex("_id")

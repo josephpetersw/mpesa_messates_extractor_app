@@ -8,6 +8,7 @@ import { initDatabase } from '../database/schema';
 import { MpesaDbMessage, insertMessages, getStats, getMessages, getAllMessages } from '../database/queries';
 import { parseMpesaMessage } from '../services/mpesaParser';
 import { exportToCsv, exportToTxt } from '../services/exportService';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const SETTINGS_FILE = FileSystem.documentDirectory + 'settings.json';
 
@@ -46,6 +47,21 @@ export default function HomeScreen() {
   
   const [selectedMsg, setSelectedMsg] = useState<MpesaDbMessage | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+
+  const [fromDate, setFromDate] = useState(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  
+  const [toDate, setToDate] = useState(() => {
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d;
+  });
+
+  const [showFromPicker, setShowFromPicker] = useState(false);
+  const [showToPicker, setShowToPicker] = useState(false);
 
   useEffect(() => {
     async function setup() {
@@ -96,7 +112,7 @@ export default function HomeScreen() {
       }
 
       // 1. Call native module
-      const rawMessages = await SmsExtractorModule.getMpesaMessages();
+      const rawMessages = await SmsExtractorModule.getMpesaMessages(fromDate.getTime(), toDate.getTime());
       
       if (!rawMessages || rawMessages.length === 0) {
         showAlert("Info", "No MPESA messages found.", "info");
@@ -197,6 +213,61 @@ export default function HomeScreen() {
             <Text className="text-white text-2xl font-bold">{stats.received}</Text>
           </View>
         </View>
+
+        {/* Date Filters */}
+        <View className="flex-row items-center gap-2 mb-6">
+          <View className="flex-1">
+            <Text className="text-gray-500 text-xs mb-1">From</Text>
+            <TouchableOpacity 
+              onPress={() => setShowFromPicker(true)}
+              className="bg-gray-100 dark:bg-dark p-3 rounded-lg border border-gray-200 dark:border-gray-700"
+            >
+              <Text className="text-black dark:text-white">{fromDate.toLocaleDateString()}</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View className="flex-1">
+            <Text className="text-gray-500 text-xs mb-1">To</Text>
+            <TouchableOpacity 
+              onPress={() => setShowToPicker(true)}
+              className="bg-gray-100 dark:bg-dark p-3 rounded-lg border border-gray-200 dark:border-gray-700"
+            >
+              <Text className="text-black dark:text-white">{toDate.toLocaleDateString()}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {showFromPicker && (
+          <DateTimePicker
+            value={fromDate}
+            mode="date"
+            display="default"
+            onChange={(event, selectedDate) => {
+              setShowFromPicker(false);
+              if (selectedDate) {
+                const newDate = new Date(selectedDate);
+                newDate.setHours(0, 0, 0, 0);
+                setFromDate(newDate);
+              }
+            }}
+          />
+        )}
+        
+        {showToPicker && (
+          <DateTimePicker
+            value={toDate}
+            mode="date"
+            display="default"
+            onChange={(event, selectedDate) => {
+              setShowToPicker(false);
+              if (selectedDate) {
+                const newDate = new Date(selectedDate);
+                newDate.setHours(23, 59, 59, 999);
+                setToDate(newDate);
+              }
+            }}
+          />
+        )}
 
         {/* Action Buttons */}
         <View className="flex-row flex-wrap gap-2 mb-6">
