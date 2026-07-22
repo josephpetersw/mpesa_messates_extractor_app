@@ -1,20 +1,45 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, ActivityIndicator, PermissionsAndroid, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SQLite from 'expo-sqlite';
+import * as FileSystem from 'expo-file-system/legacy';
 import SmsExtractorModule from '../../modules/sms-extractor/src/SmsExtractorModule';
 import { initDatabase } from '../database/schema';
 import { MpesaDbMessage, insertMessages, getStats, getMessages, getAllMessages } from '../database/queries';
 import { parseMpesaMessage } from '../services/mpesaParser';
 import { exportToCsv, exportToTxt } from '../services/exportService';
 
-const ITEMS_PER_PAGE = 20;
+const SETTINGS_FILE = FileSystem.documentDirectory + 'settings.json';
+
+type CustomAlertState = {
+  visible: boolean;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'error' | 'confirm';
+  onConfirm?: () => void;
+};
 
 export default function HomeScreen() {
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [db, setDb] = useState<SQLite.SQLiteDatabase | null>(null);
   const [loading, setLoading] = useState(true);
   const [extracting, setExtracting] = useState(false);
   const [stats, setStats] = useState({ total: 0, sent: 0, received: 0 });
+  const [lastExtract, setLastExtract] = useState<string | null>(null);
+  const [customAlert, setCustomAlert] = useState<CustomAlertState>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+  
+  const showAlert = (title: string, message: string, type: 'info' | 'success' | 'error' = 'info') => {
+    setCustomAlert({ visible: true, title, message, type });
+  };
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setCustomAlert({ visible: true, title, message, type: 'confirm', onConfirm });
+  };
   
   const [messages, setMessages] = useState<MpesaDbMessage[]>([]);
   const [page, setPage] = useState(0);
@@ -28,6 +53,13 @@ export default function HomeScreen() {
         const database = await initDatabase();
         setDb(database);
         await loadData(database, 0);
+        
+        const jsonInfo = await FileSystem.getInfoAsync(SETTINGS_FILE);
+        if (jsonInfo.exists) {
+          const json = await FileSystem.readAsStringAsync(SETTINGS_FILE);
+          const data = JSON.parse(json);
+          if (data.lastExtract) setLastExtract(data.lastExtract);
+        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -37,11 +69,11 @@ export default function HomeScreen() {
     setup();
   }, []);
 
-  const loadData = async (database: SQLite.SQLiteDatabase, pageNum: number) => {
+  const loadData = async (database: SQLite.SQLiteDatabase, pageNum: number, perPage: number = itemsPerPage) => {
     const s = await getStats(database);
     setStats(s);
     
-    const msgs = await getMessages(database, ITEMS_PER_PAGE, pageNum * ITEMS_PER_PAGE);
+    const msgs = await getMessages(database, perPage, pageNum * perPage);
     setMessages(msgs);
     setPage(pageNum);
   };
@@ -50,11 +82,24 @@ export default function HomeScreen() {
     if (!db) return;
     setExtracting(true);
     try {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.READ_SMS,
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        ]);
+        if (granted['android.permission.READ_SMS'] !== PermissionsAndroid.RESULTS.GRANTED) {
+          showAlert("Permission Denied", "SMS permission is required to extract messages.", "error");
+          setExtracting(false);
+          return;
+        }
+      }
+
       // 1. Call native module
       const rawMessages = await SmsExtractorModule.getMpesaMessages();
       
       if (!rawMessages || rawMessages.length === 0) {
-        Alert.alert("Info", "No MPESA messages found or permission denied.");
+        showAlert("Info", "No MPESA messages found.", "info");
         setExtracting(false);
         return;
       }
@@ -77,26 +122,50 @@ export default function HomeScreen() {
       // 3. Save to SQLite
       await insertMessages(db, parsedToInsert);
       
-      // 4. Reload UI
+      // 4. Reload UI and save settings
       await loadData(db, 0);
-      Alert.alert("Success", "Messages extracted and saved successfully!");
+      const now = new Date().toISOString();
+      setLastExtract(now);
+      await FileSystem.writeAsStringAsync(SETTINGS_FILE, JSON.stringify({ lastExtract: now }));
+      
+      showAlert("Success", "Messages extracted and saved successfully!", "success");
     } catch (e: any) {
-      Alert.alert("Error", e.message || "An error occurred during extraction.");
+      showAlert("Error", e.message || "An error occurred during extraction.", "error");
     } finally {
       setExtracting(false);
     }
   };
 
-  const handleExportCsv = async () => {
-    if (!db) return;
-    const all = await getAllMessages(db);
-    await exportToCsv(all);
+  const confirmExtract = () => {
+    showConfirm(
+      "Extract SMS",
+      "Are you sure you want to extract messages? This may take a few moments.",
+      () => handleExtract()
+    );
   };
 
-  const handleExportTxt = async () => {
+  const handleExportCsv = () => {
     if (!db) return;
-    const all = await getAllMessages(db);
-    await exportToTxt(all);
+    showConfirm(
+      "Export CSV",
+      "Are you sure you want to export all transactions to a CSV file?",
+      async () => {
+        const all = await getAllMessages(db);
+        await exportToCsv(all);
+      }
+    );
+  };
+
+  const handleExportTxt = () => {
+    if (!db) return;
+    showConfirm(
+      "Export TXT",
+      "Are you sure you want to export all transactions to a TXT file?",
+      async () => {
+        const all = await getAllMessages(db);
+        await exportToTxt(all);
+      }
+    );
   };
 
   if (loading) {
@@ -108,7 +177,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f4f7ff] dark:bg-black">
+    <SafeAreaView className="flex-1 bg-white dark:bg-black">
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {/* Header */}
         <Text className="text-3xl font-bold text-black dark:text-white mb-6">MPESA Dashboard</Text>
@@ -132,14 +201,17 @@ export default function HomeScreen() {
         {/* Action Buttons */}
         <View className="flex-row flex-wrap gap-2 mb-6">
           <TouchableOpacity 
-            onPress={handleExtract} 
+            onPress={confirmExtract} 
             disabled={extracting}
-            className="flex-1 bg-dark py-3 px-4 rounded-lg items-center shadow-3xl"
+            className="flex-1 bg-dark py-3 px-4 rounded-lg items-center justify-center shadow-3xl"
           >
             {extracting ? (
                <ActivityIndicator size="small" color="#fff" />
             ) : (
-               <Text className="text-white font-bold">Extract SMS</Text>
+               <View className="items-center">
+                 <Text className="text-white font-bold">Extract SMS</Text>
+                 {lastExtract && <Text className="text-gray-400 text-[10px] mt-1 text-center font-semibold">{new Date(lastExtract).toLocaleString()}</Text>}
+               </View>
             )}
           </TouchableOpacity>
           <TouchableOpacity onPress={handleExportCsv} className="bg-info py-3 px-4 rounded-lg shadow-3xl">
@@ -151,7 +223,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Table */}
-        <View className="bg-white dark:bg-[#1a2941] rounded-xl overflow-hidden shadow-3xl p-4">
+        <View className="bg-white dark:bg-dark rounded-xl overflow-hidden shadow-3xl p-4">
           <Text className="text-lg font-bold text-black dark:text-white mb-4">Recent Transactions</Text>
           
           <View className="flex-row border-b border-gray-200 dark:border-gray-700 pb-2 mb-2">
@@ -201,12 +273,29 @@ export default function HomeScreen() {
             <Text className="text-gray-500 dark:text-gray-400">Page {page + 1}</Text>
             
             <TouchableOpacity 
-              disabled={messages.length < ITEMS_PER_PAGE} 
+              disabled={messages.length < itemsPerPage} 
               onPress={() => db && loadData(db, page + 1)}
-              className={`py-2 px-4 rounded ${messages.length < ITEMS_PER_PAGE ? 'bg-gray-200' : 'bg-primary'}`}
+              className={`py-2 px-4 rounded ${messages.length < itemsPerPage ? 'bg-gray-200' : 'bg-primary'}`}
             >
-              <Text className={messages.length < ITEMS_PER_PAGE ? 'text-gray-400' : 'text-white'}>Next</Text>
+              <Text className={messages.length < itemsPerPage ? 'text-gray-400' : 'text-white'}>Next</Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Per Page Selection */}
+          <View className="flex-row justify-center items-center mt-4 gap-2">
+            <Text className="text-gray-500 text-xs">Items per page:</Text>
+            {[10, 20, 50, 100].map(val => (
+              <TouchableOpacity 
+                key={val}
+                onPress={() => {
+                  setItemsPerPage(val);
+                  if (db) loadData(db, 0, val);
+                }}
+                className={`py-1 px-3 rounded ${itemsPerPage === val ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-800'}`}
+              >
+                <Text className={`text-xs ${itemsPerPage === val ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{val}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </ScrollView>
@@ -219,7 +308,7 @@ export default function HomeScreen() {
         onRequestClose={() => setModalVisible(false)}
       >
         <View className="flex-1 justify-center items-center bg-black/50 p-4">
-          <View className="bg-white dark:bg-[#1a2941] rounded-2xl w-full p-6 shadow-3xl">
+          <View className="bg-white dark:bg-dark rounded-2xl w-full p-6 shadow-3xl">
             <Text className="text-xl font-bold mb-4 text-black dark:text-white">Transaction Details</Text>
             
             {selectedMsg && (
@@ -241,6 +330,59 @@ export default function HomeScreen() {
             >
               <Text className="text-white font-bold text-lg">Close</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Custom Alert / Confirm Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={customAlert.visible}
+        onRequestClose={() => setCustomAlert(prev => ({...prev, visible: false}))}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50 p-4">
+          <View className="bg-white dark:bg-dark rounded-2xl w-full max-w-sm p-6 shadow-3xl">
+            <Text className={`text-xl font-bold mb-2 ${
+              customAlert.type === 'error' ? 'text-danger' : 
+              customAlert.type === 'success' ? 'text-success' : 
+              'text-black dark:text-white'
+            }`}>
+              {customAlert.title}
+            </Text>
+            
+            <Text className="text-gray-600 dark:text-gray-300 mb-6 leading-5">
+              {customAlert.message}
+            </Text>
+            
+            <View className="flex-row justify-end gap-3 mt-2">
+              {customAlert.type === 'confirm' && (
+                <TouchableOpacity 
+                  className="py-2 px-4 rounded-lg bg-gray-200 dark:bg-gray-700"
+                  onPress={() => setCustomAlert(prev => ({...prev, visible: false}))}
+                >
+                  <Text className="font-semibold text-gray-700 dark:text-gray-300">Cancel</Text>
+                </TouchableOpacity>
+              )}
+              
+              <TouchableOpacity 
+                className={`py-2 px-6 rounded-lg ${
+                  customAlert.type === 'error' ? 'bg-danger' :
+                  customAlert.type === 'success' ? 'bg-success' :
+                  'bg-primary'
+                }`}
+                onPress={() => {
+                  setCustomAlert(prev => ({...prev, visible: false}));
+                  if (customAlert.onConfirm) {
+                    customAlert.onConfirm();
+                  }
+                }}
+              >
+                <Text className="font-semibold text-white">
+                  {customAlert.type === 'confirm' ? 'Confirm' : 'OK'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

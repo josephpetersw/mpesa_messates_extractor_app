@@ -1,56 +1,54 @@
-# Welcome to your Expo app 👋
+# M-PESA Messages Extractor
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An Expo React Native application designed to parse, extract, and manage M-PESA SMS messages. The app parses transaction data, stores it securely on-device, and allows for robust data exporting.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Native SMS Extraction:** Built with a custom Expo native module in Kotlin to efficiently query and extract SMS data directly from the Android content resolver.
+- **Smart Parsing:** Automatically parses raw M-PESA messages into structured transaction details including Amount, Source/Recipient Name, Phone Number, and Transaction Type (Sent vs Received).
+- **Local Database Persistence:** Uses `expo-sqlite` to securely persist all extracted messages on-device for fast querying and offline access.
+- **Data Exporting:** Export your database records easily to `.csv` and `.txt` formats using `expo-file-system` and `expo-sharing`.
+- **Runtime Permissions:** Gracefully requests and handles Android runtime permissions for `READ_SMS`, `READ_EXTERNAL_STORAGE`, and `WRITE_EXTERNAL_STORAGE`.
+- **Vistro Theme Integrated:** UI styled extensively with Tailwind CSS (via `nativewind`), perfectly aligning with the Vistro Theme color palette and layout aesthetics.
 
+## Prerequisites
+
+Because this project utilizes a **custom native module** for SMS extraction, it cannot be run inside the standard Expo Go app. You must compile a development build.
+
+- Node.js (v18+ recommended)
+- Android Studio / Android SDK (for compiling the Android app)
+
+## Getting Started
+
+1. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+2. **Run on Android**
+   Use the `expo run` command to prebuild the native Android directories and compile the app locally:
    ```bash
-   npx expo start
+   npx expo run:android
    ```
 
-In the output, you'll find options to open the app in a
+## EAS Build
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+This project is fully configured for EAS (Expo Application Services). 
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+To build an APK for Android in the cloud:
 ```bash
-npm run reset-project
+eas build --profile preview --platform android
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+To submit to the Google Play Store:
+```bash
+eas submit -p android
+```
 
-### Other setup steps
+## Tech Stack
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **Framework:** [Expo](https://expo.dev/) & [React Native](https://reactnative.dev/)
+- **Styling:** [NativeWind](https://www.nativewind.dev/) (Tailwind CSS)
+- **Database:** `expo-sqlite`
+- **Native Modules:** Expo Modules API (Kotlin)
+- **Routing:** Expo Router
