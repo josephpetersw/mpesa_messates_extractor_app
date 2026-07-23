@@ -2,6 +2,8 @@ import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
+
+const SCREEN = Dimensions.get('screen');
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -130,8 +132,11 @@ const styles = StyleSheet.create({
     height: 71,
   },
   splashImage: {
-    width: '100%',
-    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SCREEN.width,
+    height: SCREEN.height,
   },
   background: {
     borderRadius: 40,
@@ -143,8 +148,6 @@ const styles = StyleSheet.create({
   splashOverlay: {
     ...StyleSheet.absoluteFill,
     backgroundColor: '#fafafa',
-    alignItems: 'center',
-    justifyContent: 'center',
     zIndex: 1000,
   },
 });
