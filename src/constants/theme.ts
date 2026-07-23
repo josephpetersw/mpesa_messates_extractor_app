@@ -1,6 +1,6 @@
 /**
  * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * These match the Vristo theme exactly.
  */
 
 import '@/global.css';
@@ -9,20 +9,28 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#0e1726', // Vristo black
-    background: '#ffffff',
+    text: '#0e1726',           // Vristo black
+    background: '#fafafa',     // Vristo light page bg
     backgroundElement: '#eaf1ff', // Vristo primary.light
     backgroundSelected: '#e0e6ed', // Vristo white.light
-    textSecondary: '#888ea8', // Vristo white.dark
-    primary: '#4361ee', // Vristo primary
+    textSecondary: '#888ea8',  // Vristo white.dark
+    primary: '#4361ee',        // Vristo primary
+    panel: '#ffffff',          // Vristo panel bg
+    border: '#e0e6ed',         // Vristo border
+    tableHead: '#f6f8fa',      // Vristo table head bg
+    muted: '#506690',          // Vristo muted text
   },
   dark: {
-    text: '#e0e6ed', // Vristo white.light
-    background: '#0e1726', // Vristo black
-    backgroundElement: '#1b2e4b', // Vristo darkish element
-    backgroundSelected: '#3b3f5c', // Vristo dark
-    textSecondary: '#888ea8', // Vristo white.dark
-    primary: '#4361ee', // Vristo primary
+    text: '#e0e6ed',           // Vristo white.light
+    background: '#060818',     // Vristo dark page bg
+    backgroundElement: '#1b2e4b', // Vristo dark panel
+    backgroundSelected: '#3b3f5c', // Vristo dark selected
+    textSecondary: '#888ea8',  // Vristo white.dark
+    primary: '#4361ee',        // Vristo primary
+    panel: '#0e1726',          // Vristo dark panel (black)
+    border: '#191e3a',         // Vristo dark border
+    tableHead: '#1a2941',      // Vristo dark table head
+    muted: '#506690',          // Vristo muted text
   },
 } as const;
 
@@ -30,26 +38,18 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+    sans: 'Nunito_400Regular',
+    semibold: 'Nunito_600SemiBold',
+    bold: 'Nunito_700Bold',
+    extrabold: 'Nunito_800ExtraBold',
+    black: 'Nunito_900Black',
   },
   default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
+    sans: 'Nunito_400Regular',
+    semibold: 'Nunito_600SemiBold',
+    bold: 'Nunito_700Bold',
+    extrabold: 'Nunito_800ExtraBold',
+    black: 'Nunito_900Black',
   },
 });
 

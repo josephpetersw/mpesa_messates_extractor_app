@@ -9,6 +9,31 @@ import { useFonts, Nunito_400Regular, Nunito_600SemiBold, Nunito_700Bold, Nunito
 
 SplashScreen.preventAutoHideAsync();
 
+// Vristo-themed navigation theme
+const VristoLightTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: '#fafafa',
+    card: '#ffffff',
+    text: '#0e1726',
+    border: '#e0e6ed',
+    primary: '#4361ee',
+  },
+};
+
+const VristoDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: '#060818',
+    card: '#0e1726',
+    text: '#e0e6ed',
+    border: '#191e3a',
+    primary: '#4361ee',
+  },
+};
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
@@ -22,7 +47,7 @@ export default function TabLayout() {
   if (!loaded) return null;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={colorScheme === 'dark' ? VristoDarkTheme : VristoLightTheme}>
       <AnimatedSplashOverlay />
       <AppTabs />
     </ThemeProvider>
