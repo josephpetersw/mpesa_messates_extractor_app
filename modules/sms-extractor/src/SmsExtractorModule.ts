@@ -10,6 +10,6 @@ export type MpesaMessage = {
 };
 
 declare class SmsExtractorModule extends NativeModule {
-  getMpesaMessages(): Promise<MpesaMessage[]>;
+  getMpesaMessages(fromDateMs: number, toDateMs: number): Promise<MpesaMessage[]>;
 }
 export default requireNativeModule<SmsExtractorModule>('SmsExtractor');

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mpesa_messates_extractor_app",
-    "slug": "mpesa_messates_extractor_app",
+    "name": "SMS Extractor",
+    "slug": "sms_extractor",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -26,7 +26,7 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
       ],
-      "package": "com.zestra_capital.mpesa_messates_extractor_app"
+      "package": "com.sms_extractor"
     },
     "web": {
       "output": "static",
@@ -43,7 +43,8 @@
         }
       ],
       "expo-sqlite",
-      "expo-sharing"
+      "expo-sharing",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
