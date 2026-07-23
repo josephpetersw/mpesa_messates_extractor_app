@@ -35,16 +35,21 @@ Because this project utilizes a **custom native module** for SMS extraction, it 
 
 This project is fully configured for EAS (Expo Application Services) to handle both cloud builds and Over-The-Air (OTA) updates.
 
-### 1. Cloud Builds (EAS Build)
+### 1. Building the APK 
 
-To build an APK for Android in the cloud that you can install on your device for testing:
+To build an APK directly on your **local machine**:
 ```bash
-eas build --profile preview --platform android
+eas build --platform android --profile preview --local
 ```
 
-To build an AAB and submit directly to the Google Play Store:
+To build an APK in the **cloud** via EAS servers:
 ```bash
-eas build --profile production --platform android
+eas build --platform android --profile preview
+```
+
+To build a production AAB for Google Play Store submission:
+```bash
+eas build --platform android --profile production
 eas submit -p android
 ```
 

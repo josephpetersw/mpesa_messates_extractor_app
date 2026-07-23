@@ -1,143 +1,350 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
-import * as FileSystem from 'expo-file-system/legacy';
-import { Paths, Directory } from 'expo-file-system';
+import { Paths } from 'expo-file-system';
 import * as Updates from 'expo-updates';
+import { Ionicons } from '@expo/vector-icons';
+
+type IoniconsName = keyof typeof Ionicons.glyphMap;
+
+type CustomModalConfig = {
+  visible: boolean;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'danger' | 'confirm' | 'update';
+  icon?: IoniconsName;
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm?: () => void | Promise<void>;
+};
 
 export default function MoreScreen() {
   const [clearingCache, setClearingCache] = useState(false);
   const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const [modalConfig, setModalConfig] = useState<CustomModalConfig>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info',
+  });
 
   const appVersion = Constants.expoConfig?.version || '1.0.0';
 
-  const handleClearCache = async () => {
-    setClearingCache(true);
-    try {
-      // Using the new Expo FileSystem API to clear cache directory
-      const cacheDir = Paths.cache;
-      const files = cacheDir.list();
-      
-      for (const file of files) {
-        file.delete();
-      }
-      
-      Alert.alert('Success', 'Cache cleared successfully.');
-    } catch (error) {
-      console.error('Failed to clear cache:', error);
-      Alert.alert('Error', 'Failed to clear cache.');
-    } finally {
-      setClearingCache(false);
-    }
+  const showModal = (config: Omit<CustomModalConfig, 'visible'>) => {
+    setModalConfig({ ...config, visible: true });
+  };
+
+  const closeModal = () => {
+    setModalConfig(prev => ({ ...prev, visible: false }));
+  };
+
+  const handleClearCacheConfirm = () => {
+    showModal({
+      title: 'Clear App Cache?',
+      message: 'Are you sure you want to clear cached temporary files? This will free up storage space on your device without deleting your saved database transactions.',
+      type: 'warning',
+      icon: 'trash-outline',
+      confirmText: 'Clear Cache',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        closeModal();
+        setClearingCache(true);
+        try {
+          const cacheDir = Paths.cache;
+          const files = cacheDir.list();
+          for (const file of files) {
+            file.delete();
+          }
+          setTimeout(() => {
+            showModal({
+              title: 'Cache Cleared!',
+              message: 'App cache files were successfully deleted.',
+              type: 'success',
+              icon: 'checkmark-circle-outline',
+              confirmText: 'Done',
+            });
+          }, 300);
+        } catch (error) {
+          console.error('Failed to clear cache:', error);
+          setTimeout(() => {
+            showModal({
+              title: 'Clear Failed',
+              message: 'An error occurred while clearing cache files.',
+              type: 'danger',
+              icon: 'alert-circle-outline',
+              confirmText: 'Close',
+            });
+          }, 300);
+        } finally {
+          setClearingCache(false);
+        }
+      },
+    });
   };
 
   const handleCheckUpdates = async () => {
     setCheckingUpdates(true);
     try {
       if (__DEV__) {
-        Alert.alert('Info', 'OTA updates are not available in development mode.');
+        showModal({
+          title: 'Development Mode',
+          message: 'Over-The-Air (OTA) updates are disabled while running in development mode.',
+          type: 'info',
+          icon: 'construct-outline',
+          confirmText: 'Understood',
+        });
         return;
       }
-      
+
       const update = await Updates.checkForUpdateAsync();
-      
+
       if (update.isAvailable) {
-        Alert.alert(
-          'Update Available',
-          'A new version is available. Would you like to download it now?',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Download', 
-              onPress: async () => {
-                setCheckingUpdates(true);
-                try {
-                  await Updates.fetchUpdateAsync();
-                  Alert.alert(
-                    'Update Downloaded',
-                    'The app will now restart to apply the update.',
-                    [{ text: 'Restart', onPress: () => Updates.reloadAsync() }]
-                  );
-                } catch (e) {
-                  Alert.alert('Error', 'Failed to download the update.');
-                } finally {
-                  setCheckingUpdates(false);
-                }
-              } 
+        showModal({
+          title: 'Update Available!',
+          message: 'A new version of MPESA Extractor is available. Would you like to download and install it now?',
+          type: 'update',
+          icon: 'cloud-download-outline',
+          confirmText: 'Download Update',
+          cancelText: 'Later',
+          onConfirm: async () => {
+            closeModal();
+            setCheckingUpdates(true);
+            try {
+              await Updates.fetchUpdateAsync();
+              showModal({
+                title: 'Update Ready!',
+                message: 'The update has been downloaded. Restart the application now to apply the changes.',
+                type: 'success',
+                icon: 'reload-circle-outline',
+                confirmText: 'Restart App Now',
+                onConfirm: () => Updates.reloadAsync(),
+              });
+            } catch (e) {
+              showModal({
+                title: 'Download Failed',
+                message: 'Failed to download the latest update. Please check your network connection.',
+                type: 'danger',
+                icon: 'alert-circle-outline',
+                confirmText: 'Close',
+              });
+            } finally {
+              setCheckingUpdates(false);
             }
-          ]
-        );
+          },
+        });
       } else {
-        Alert.alert('Up to Date', 'You are running the latest version of the app.');
+        showModal({
+          title: 'You are Up to Date!',
+          message: `Your app is running the latest available version (v${appVersion}). No new updates found.`,
+          type: 'success',
+          icon: 'checkmark-done-circle-outline',
+          confirmText: 'Awesome',
+        });
       }
     } catch (error) {
       console.error('Update check failed:', error);
-      Alert.alert('Error', 'Failed to check for updates. Please try again later.');
+      showModal({
+        title: 'Check Failed',
+        message: 'Could not connect to update servers. Please verify your internet connection.',
+        type: 'danger',
+        icon: 'wifi-outline',
+        confirmText: 'OK',
+      });
     } finally {
       setCheckingUpdates(false);
     }
   };
 
+  const getBadgeStyle = (type: CustomModalConfig['type']) => {
+    switch (type) {
+      case 'warning':
+      case 'danger':
+        return { bg: 'bg-danger/10 border-danger/20', color: '#e7515a' };
+      case 'success':
+        return { bg: 'bg-success/10 border-success/20', color: '#00ab55' };
+      case 'update':
+        return { bg: 'bg-primary/10 border-primary/20', color: '#4361ee' };
+      case 'info':
+      default:
+        return { bg: 'bg-info/10 border-info/20', color: '#2196f3' };
+    }
+  };
+
+  const getButtonPrimaryStyle = (type: CustomModalConfig['type']) => {
+    switch (type) {
+      case 'warning':
+      case 'danger':
+        return 'bg-danger';
+      case 'success':
+        return 'bg-success';
+      case 'update':
+      case 'info':
+      default:
+        return 'bg-primary';
+    }
+  };
+
+  const currentBadge = getBadgeStyle(modalConfig.type);
+
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-black">
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <Text className="text-3xl font-bold text-black dark:text-white mb-6">More</Text>
-        
-        <View className="bg-white dark:bg-dark rounded-xl overflow-hidden shadow-3xl mb-6">
+
+        {/* Section: Application Info & Actions */}
+        <View className="bg-white dark:bg-dark rounded-2xl overflow-hidden shadow-3xl mb-6 border border-gray-100 dark:border-gray-800">
           {/* App Version */}
           <View className="flex-row items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
-            <View>
-              <Text className="text-lg font-semibold text-black dark:text-white">App Version</Text>
-              <Text className="text-sm text-gray-500">Current version installed</Text>
+            <View className="flex-row items-center gap-3">
+              <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
+                <Ionicons name="phone-portrait-outline" size={20} color="#4361ee" />
+              </View>
+              <View>
+                <Text className="text-base font-semibold text-black dark:text-white">App Version</Text>
+                <Text className="text-xs text-gray-500">Currently installed build</Text>
+              </View>
             </View>
-            <Text className="text-gray-400 font-bold">{appVersion}</Text>
+            <View className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">
+              <Text className="text-gray-700 dark:text-gray-300 font-bold text-xs">v{appVersion}</Text>
+            </View>
           </View>
 
           {/* Check for Updates */}
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleCheckUpdates}
             disabled={checkingUpdates}
+            activeOpacity={0.7}
             className="flex-row items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800"
           >
-            <View>
-              <Text className="text-lg font-semibold text-black dark:text-white">Check for Updates</Text>
-              <Text className="text-sm text-gray-500">See if a newer version is available</Text>
+            <View className="flex-row items-center gap-3">
+              <View className="w-10 h-10 rounded-xl bg-info/10 items-center justify-center">
+                <Ionicons name="refresh-outline" size={20} color="#2196f3" />
+              </View>
+              <View>
+                <Text className="text-base font-semibold text-black dark:text-white">Check for Updates</Text>
+                <Text className="text-xs text-gray-500">Scan for OTA updates & bug fixes</Text>
+              </View>
             </View>
             {checkingUpdates ? (
               <ActivityIndicator size="small" color="#4361ee" />
             ) : (
-              <Text className="text-primary font-bold">Check</Text>
+              <View className="bg-primary/10 px-3 py-1.5 rounded-full">
+                <Text className="text-primary font-bold text-xs">Check Now</Text>
+              </View>
             )}
           </TouchableOpacity>
 
           {/* Clear Cache */}
-          <TouchableOpacity 
-            onPress={handleClearCache}
+          <TouchableOpacity
+            onPress={handleClearCacheConfirm}
             disabled={clearingCache}
-            className="flex-row items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800"
+            activeOpacity={0.7}
+            className="flex-row items-center justify-between p-4"
           >
-            <View>
-              <Text className="text-lg font-semibold text-danger">Clear Cache</Text>
-              <Text className="text-sm text-gray-500">Free up space on your device</Text>
+            <View className="flex-row items-center gap-3">
+              <View className="w-10 h-10 rounded-xl bg-danger/10 items-center justify-center">
+                <Ionicons name="trash-outline" size={20} color="#e7515a" />
+              </View>
+              <View>
+                <Text className="text-base font-semibold text-danger">Clear Cache</Text>
+                <Text className="text-xs text-gray-500">Remove temporary files to free space</Text>
+              </View>
             </View>
             {clearingCache ? (
               <ActivityIndicator size="small" color="#ef233c" />
             ) : (
-              <Text className="text-danger font-bold">Clear</Text>
+              <View className="bg-danger/10 px-3 py-1.5 rounded-full">
+                <Text className="text-danger font-bold text-xs">Clear</Text>
+              </View>
             )}
           </TouchableOpacity>
         </View>
 
-        <View className="items-center mt-8">
-          <Text className="text-gray-400 text-xs text-center">
+        {/* Section: About */}
+        <View className="bg-white dark:bg-dark rounded-2xl p-5 shadow-3xl mb-6 border border-gray-100 dark:border-gray-800">
+          <View className="flex-row items-center gap-2 mb-3">
+            <Ionicons name="information-circle-outline" size={18} color="#9ca3af" />
+            <Text className="text-sm font-bold text-gray-400 uppercase tracking-wider">About App</Text>
+          </View>
+          <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
+            MPESA Messages Extractor scans and parses MPESA transactions directly from your device SMS inbox into an offline SQLite database for fast search, reporting, and export.
+          </Text>
+        </View>
+
+        <View className="items-center mt-6">
+          <Text className="text-gray-400 text-xs text-center font-medium">
             MPESA Messages Extractor
           </Text>
           <Text className="text-gray-400 text-xs text-center mt-1">
-            © {new Date().getFullYear()} Zestra Capital
+            © {new Date().getFullYear()} Mpesa Sms Extractor
           </Text>
         </View>
       </ScrollView>
+
+      {/* Styled Custom Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalConfig.visible}
+        onRequestClose={closeModal}
+      >
+        <View className="flex-1 justify-center items-center bg-black/60 p-5">
+          <View className="bg-white dark:bg-[#121c2c] rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-gray-100 dark:border-gray-800 items-center">
+            {/* Top Glowing Icon Badge */}
+            <View className={`w-16 h-16 rounded-full items-center justify-center border mb-4 ${currentBadge.bg}`}>
+              <Ionicons 
+                name={modalConfig.icon || 'information-circle-outline'} 
+                size={34} 
+                color={currentBadge.color} 
+              />
+            </View>
+
+            {/* Title */}
+            <Text className="text-xl font-extrabold text-black dark:text-white text-center mb-2">
+              {modalConfig.title}
+            </Text>
+
+            {/* Message Body */}
+            <Text className="text-gray-600 dark:text-gray-300 text-center text-sm leading-6 mb-6">
+              {modalConfig.message}
+            </Text>
+
+            {/* Actions */}
+            <View className="w-full flex-row gap-3">
+              {modalConfig.cancelText && (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 items-center"
+                  onPress={() => {
+                    closeModal();
+                  }}
+                >
+                  <Text className="font-bold text-gray-700 dark:text-gray-300 text-sm">
+                    {modalConfig.cancelText}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                className={`flex-1 py-3 rounded-xl items-center shadow-lg ${getButtonPrimaryStyle(modalConfig.type)}`}
+                onPress={async () => {
+                  if (modalConfig.onConfirm) {
+                    await modalConfig.onConfirm();
+                  } else {
+                    closeModal();
+                  }
+                }}
+              >
+                <Text className="font-bold text-white text-sm">
+                  {modalConfig.confirmText || 'OK'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

@@ -9,6 +9,7 @@ import { MpesaDbMessage, insertMessages, getStats, getMessages, getAllMessages }
 import { parseMpesaMessage } from '../services/mpesaParser';
 import { exportToCsv, exportToTxt } from '../services/exportService';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
 
 const SETTINGS_FILE = FileSystem.documentDirectory + 'settings.json';
 
@@ -62,6 +63,36 @@ export default function HomeScreen() {
 
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
+
+  const formatDateLabel = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const applyDatePreset = (preset: 'today' | '7days' | '30days' | 'month') => {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const start = new Date();
+    if (preset === 'today') {
+      start.setHours(0, 0, 0, 0);
+    } else if (preset === '7days') {
+      start.setDate(end.getDate() - 7);
+      start.setHours(0, 0, 0, 0);
+    } else if (preset === '30days') {
+      start.setDate(end.getDate() - 30);
+      start.setHours(0, 0, 0, 0);
+    } else if (preset === 'month') {
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+    }
+
+    setFromDate(start);
+    setToDate(end);
+  };
 
   useEffect(() => {
     async function setup() {
@@ -214,25 +245,84 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Date Filters */}
-        <View className="flex-row items-center gap-2 mb-6">
-          <View className="flex-1">
-            <Text className="text-gray-500 text-xs mb-1">From</Text>
+        {/* Date Filters Card */}
+        <View className="bg-white dark:bg-dark rounded-2xl p-4 shadow-3xl mb-6 border border-gray-100 dark:border-gray-800">
+          <View className="flex-row items-center justify-between mb-3 pb-2 border-b border-gray-100 dark:border-gray-800">
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="calendar-outline" size={18} color="#4361ee" />
+              <Text className="text-base font-bold text-black dark:text-white">Date Filter Range</Text>
+            </View>
             <TouchableOpacity 
-              onPress={() => setShowFromPicker(true)}
-              className="bg-gray-100 dark:bg-dark p-3 rounded-lg border border-gray-200 dark:border-gray-700"
+              onPress={() => applyDatePreset('today')} 
+              className="bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20"
             >
-              <Text className="text-black dark:text-white">{fromDate.toLocaleDateString()}</Text>
+              <Text className="text-xs font-bold text-primary">Reset Today</Text>
             </TouchableOpacity>
           </View>
-          
-          <View className="flex-1">
-            <Text className="text-gray-500 text-xs mb-1">To</Text>
+
+          {/* Quick Presets Bar */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
+            <View className="flex-row gap-2">
+              <TouchableOpacity 
+                onPress={() => applyDatePreset('today')}
+                className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700"
+              >
+                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">Today</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => applyDatePreset('7days')}
+                className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700"
+              >
+                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">Last 7 Days</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => applyDatePreset('30days')}
+                className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700"
+              >
+                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">Last 30 Days</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => applyDatePreset('month')}
+                className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700"
+              >
+                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">This Month</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+
+          {/* From / To Input Cards */}
+          <View className="flex-row items-center gap-2">
+            {/* From Card */}
             <TouchableOpacity 
-              onPress={() => setShowToPicker(true)}
-              className="bg-gray-100 dark:bg-dark p-3 rounded-lg border border-gray-200 dark:border-gray-700"
+              activeOpacity={0.8}
+              onPress={() => setShowFromPicker(true)}
+              className="flex-1 bg-gray-50 dark:bg-black/40 p-3 rounded-xl border border-gray-200 dark:border-gray-700/80 flex-row items-center justify-between"
             >
-              <Text className="text-black dark:text-white">{toDate.toLocaleDateString()}</Text>
+              <View className="flex-1">
+                <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Start Date</Text>
+                <Text className="text-xs font-bold text-black dark:text-white" numberOfLines={1}>{formatDateLabel(fromDate)}</Text>
+              </View>
+              <View className="w-7 h-7 rounded-lg bg-primary/10 items-center justify-center ml-1">
+                <Ionicons name="calendar-sharp" size={14} color="#4361ee" />
+              </View>
+            </TouchableOpacity>
+            
+            {/* Separator icon */}
+            <Ionicons name="arrow-forward-outline" size={14} color="#9ca3af" />
+
+            {/* To Card */}
+            <TouchableOpacity 
+              activeOpacity={0.8}
+              onPress={() => setShowToPicker(true)}
+              className="flex-1 bg-gray-50 dark:bg-black/40 p-3 rounded-xl border border-gray-200 dark:border-gray-700/80 flex-row items-center justify-between"
+            >
+              <View className="flex-1">
+                <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">End Date</Text>
+                <Text className="text-xs font-bold text-black dark:text-white" numberOfLines={1}>{formatDateLabel(toDate)}</Text>
+              </View>
+              <View className="w-7 h-7 rounded-lg bg-primary/10 items-center justify-center ml-1">
+                <Ionicons name="calendar-sharp" size={14} color="#4361ee" />
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -242,6 +332,7 @@ export default function HomeScreen() {
             value={fromDate}
             mode="date"
             display="default"
+            maximumDate={new Date()}
             onChange={(event, selectedDate) => {
               setShowFromPicker(false);
               if (selectedDate) {
@@ -258,6 +349,7 @@ export default function HomeScreen() {
             value={toDate}
             mode="date"
             display="default"
+            maximumDate={new Date()}
             onChange={(event, selectedDate) => {
               setShowToPicker(false);
               if (selectedDate) {
