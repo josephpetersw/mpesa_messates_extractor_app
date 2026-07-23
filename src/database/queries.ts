@@ -50,6 +50,41 @@ export async function getStats(db: SQLite.SQLiteDatabase) {
   };
 }
 
+export async function getAdvancedStats(db: SQLite.SQLiteDatabase, fromDate?: number, toDate?: number) {
+  let whereClause = '';
+  let params: Record<string, any> = {};
+  if (fromDate && toDate) {
+    whereClause = 'WHERE date >= $fromDate AND date <= $toDate';
+    params = { $fromDate: fromDate, $toDate: toDate };
+  } else if (fromDate) {
+    whereClause = 'WHERE date >= $fromDate';
+    params = { $fromDate: fromDate };
+  } else if (toDate) {
+    whereClause = 'WHERE date <= $toDate';
+    params = { $toDate: toDate };
+  }
+
+  const queryBase = `FROM messages ${whereClause}`;
+
+  const totalCount = await db.getFirstAsync<{count: number}>(`SELECT COUNT(*) as count ${queryBase}`, params);
+  const totalAmount = await db.getFirstAsync<{total: number}>(`SELECT SUM(amount) as total ${queryBase}`, params);
+
+  const sentCount = await db.getFirstAsync<{count: number}>(`SELECT COUNT(*) as count ${queryBase} ${whereClause ? 'AND' : 'WHERE'} transaction_type = "Sent"`, params);
+  const sentAmount = await db.getFirstAsync<{total: number}>(`SELECT SUM(amount) as total ${queryBase} ${whereClause ? 'AND' : 'WHERE'} transaction_type = "Sent"`, params);
+
+  const receivedCount = await db.getFirstAsync<{count: number}>(`SELECT COUNT(*) as count ${queryBase} ${whereClause ? 'AND' : 'WHERE'} transaction_type = "Received"`, params);
+  const receivedAmount = await db.getFirstAsync<{total: number}>(`SELECT SUM(amount) as total ${queryBase} ${whereClause ? 'AND' : 'WHERE'} transaction_type = "Received"`, params);
+
+  return {
+    total: totalCount?.count || 0,
+    totalAmount: totalAmount?.total || 0,
+    sent: sentCount?.count || 0,
+    sentAmount: sentAmount?.total || 0,
+    received: receivedCount?.count || 0,
+    receivedAmount: receivedAmount?.total || 0,
+  };
+}
+
 export async function getMessages(db: SQLite.SQLiteDatabase, limit: number, offset: number) {
   const messages = await db.getAllAsync<MpesaDbMessage>(
     'SELECT * FROM messages ORDER BY date DESC LIMIT $limit OFFSET $offset',
