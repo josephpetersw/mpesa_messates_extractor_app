@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import { Paths } from 'expo-file-system';
 import * as Updates from 'expo-updates';
 import { Ionicons } from '@expo/vector-icons';
+import { useThemePreference, ThemePreference } from '../context/ThemeContext';
 
 type IoniconsName = keyof typeof Ionicons.glyphMap;
 
@@ -22,6 +23,7 @@ type CustomModalConfig = {
 export default function MoreScreen() {
   const [clearingCache, setClearingCache] = useState(false);
   const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const { preference, setPreference } = useThemePreference();
   const [modalConfig, setModalConfig] = useState<CustomModalConfig>({
     visible: false,
     title: '',
@@ -156,133 +158,177 @@ export default function MoreScreen() {
     }
   };
 
-  const getBadgeStyle = (type: CustomModalConfig['type']) => {
+  const getModalColors = (type: CustomModalConfig['type']) => {
     switch (type) {
       case 'warning':
       case 'danger':
-        return { bg: 'bg-danger/10 border-danger/20', color: '#e7515a' };
+        return { iconBg: 'bg-danger/10', iconColor: '#e7515a', btnBg: 'bg-danger' };
       case 'success':
-        return { bg: 'bg-success/10 border-success/20', color: '#00ab55' };
-      case 'update':
-        return { bg: 'bg-primary/10 border-primary/20', color: '#4361ee' };
-      case 'info':
-      default:
-        return { bg: 'bg-info/10 border-info/20', color: '#2196f3' };
-    }
-  };
-
-  const getButtonPrimaryStyle = (type: CustomModalConfig['type']) => {
-    switch (type) {
-      case 'warning':
-      case 'danger':
-        return 'bg-danger';
-      case 'success':
-        return 'bg-success';
+        return { iconBg: 'bg-success/10', iconColor: '#00ab55', btnBg: 'bg-success' };
       case 'update':
       case 'info':
       default:
-        return 'bg-primary';
+        return { iconBg: 'bg-primary/10', iconColor: '#4361ee', btnBg: 'bg-primary' };
     }
   };
 
-  const currentBadge = getBadgeStyle(modalConfig.type);
+  const currentColors = getModalColors(modalConfig.type);
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-black">
+    <SafeAreaView className="flex-1 bg-vristo-bg dark:bg-vristo-bg-dark">
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <Text className="text-3xl font-bold text-black dark:text-white mb-6">More</Text>
+        
+        {/* Header */}
+        <View className="mb-6">
+          <Text className="text-2xl font-nunito-black text-black dark:text-white-light">More</Text>
+          <Text className="text-sm font-nunito text-vristo-muted mt-0.5">App settings and information</Text>
+        </View>
 
-        {/* Section: Application Info & Actions */}
-        <View className="bg-white dark:bg-dark rounded-2xl overflow-hidden shadow-3xl mb-6 border border-gray-100 dark:border-gray-800">
-          {/* App Version */}
-          <View className="flex-row items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
+        {/* Appearance Panel */}
+        <View className="bg-vristo-panel dark:bg-vristo-panel-dark rounded-md shadow-panel mb-6 overflow-hidden border border-vristo-border dark:border-vristo-border-dark">
+          <View className="px-5 py-3 bg-vristo-table-head dark:bg-vristo-table-head-dark border-b border-vristo-border dark:border-vristo-border-dark flex-row items-center gap-2">
+            <Ionicons name="color-palette-outline" size={14} color="#506690" />
+            <Text className="text-xs font-nunito-bold text-vristo-muted uppercase tracking-widest">Appearance</Text>
+          </View>
+
+          <View className="px-5 py-4">
+            <Text className="text-sm font-nunito-semibold text-black dark:text-white-light mb-1">Theme Mode</Text>
+            <Text className="text-xs font-nunito text-vristo-muted mb-4">Choose how the app looks on your device</Text>
+
+            <View className="flex-row gap-3">
+              {([
+                { key: 'light', label: 'Light', icon: 'sunny-outline' },
+                { key: 'dark',  label: 'Dark',  icon: 'moon-outline' },
+                { key: 'system', label: 'System', icon: 'phone-portrait-outline' },
+              ] as { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[]).map(({ key, label, icon }) => {
+                const isActive = preference === key;
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    onPress={() => setPreference(key)}
+                    activeOpacity={0.8}
+                    className={`flex-1 items-center py-3 rounded-md border ${
+                      isActive
+                        ? 'bg-primary border-primary'
+                        : 'bg-[#f6f8fa] dark:bg-[#1a2941] border-vristo-border dark:border-vristo-border-dark'
+                    }`}
+                  >
+                    <Ionicons
+                      name={icon}
+                      size={22}
+                      color={isActive ? '#ffffff' : '#506690'}
+                    />
+                    <Text className={`text-xs font-nunito-bold mt-1.5 ${
+                      isActive ? 'text-white' : 'text-vristo-muted'
+                    }`}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+
+        {/* App Management Panel */}
+        <View className="bg-vristo-panel dark:bg-vristo-panel-dark rounded-md shadow-panel mb-6 overflow-hidden border border-vristo-border dark:border-vristo-border-dark">
+          
+          {/* Section Label */}
+          <View className="px-5 py-3 bg-vristo-table-head dark:bg-vristo-table-head-dark border-b border-vristo-border dark:border-vristo-border-dark">
+            <Text className="text-xs font-nunito-bold text-vristo-muted uppercase tracking-widest">App Management</Text>
+          </View>
+
+          {/* App Version Row */}
+          <View className="flex-row items-center justify-between px-5 py-4 border-b border-vristo-border dark:border-vristo-border-dark">
             <View className="flex-row items-center gap-3">
-              <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
-                <Ionicons name="phone-portrait-outline" size={20} color="#4361ee" />
+              <View className="w-9 h-9 rounded bg-primary/10 items-center justify-center">
+                <Ionicons name="phone-portrait-outline" size={18} color="#4361ee" />
               </View>
               <View>
-                <Text className="text-base font-semibold text-black dark:text-white">App Version</Text>
-                <Text className="text-xs text-gray-500">Currently installed build</Text>
+                <Text className="text-sm font-nunito-semibold text-black dark:text-white-light">App Version</Text>
+                <Text className="text-xs font-nunito text-vristo-muted">Currently installed build</Text>
               </View>
             </View>
-            <View className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">
-              <Text className="text-gray-700 dark:text-gray-300 font-bold text-xs">v{appVersion}</Text>
+            <View className="bg-[#f6f8fa] dark:bg-[#1a2941] px-3 py-1 rounded border border-vristo-border dark:border-vristo-border-dark">
+              <Text className="text-vristo-muted font-nunito-bold text-xs">v{appVersion}</Text>
             </View>
           </View>
 
-          {/* Check for Updates */}
+          {/* Check for Updates Row */}
           <TouchableOpacity
             onPress={handleCheckUpdates}
             disabled={checkingUpdates}
             activeOpacity={0.7}
-            className="flex-row items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800"
+            className="flex-row items-center justify-between px-5 py-4 border-b border-vristo-border dark:border-vristo-border-dark"
           >
             <View className="flex-row items-center gap-3">
-              <View className="w-10 h-10 rounded-xl bg-info/10 items-center justify-center">
-                <Ionicons name="refresh-outline" size={20} color="#2196f3" />
+              <View className="w-9 h-9 rounded bg-info/10 items-center justify-center">
+                <Ionicons name="refresh-outline" size={18} color="#2196f3" />
               </View>
               <View>
-                <Text className="text-base font-semibold text-black dark:text-white">Check for Updates</Text>
-                <Text className="text-xs text-gray-500">Scan for OTA updates & bug fixes</Text>
+                <Text className="text-sm font-nunito-semibold text-black dark:text-white-light">Check for Updates</Text>
+                <Text className="text-xs font-nunito text-vristo-muted">Scan for OTA updates & bug fixes</Text>
               </View>
             </View>
             {checkingUpdates ? (
               <ActivityIndicator size="small" color="#4361ee" />
             ) : (
-              <View className="bg-primary/10 px-3 py-1.5 rounded-full">
-                <Text className="text-primary font-bold text-xs">Check Now</Text>
+              <View className="bg-info/10 px-3 py-1 rounded border border-info/20">
+                <Text className="text-info font-nunito-bold text-xs">Check Now</Text>
               </View>
             )}
           </TouchableOpacity>
 
-          {/* Clear Cache */}
+          {/* Clear Cache Row */}
           <TouchableOpacity
             onPress={handleClearCacheConfirm}
             disabled={clearingCache}
             activeOpacity={0.7}
-            className="flex-row items-center justify-between p-4"
+            className="flex-row items-center justify-between px-5 py-4"
           >
             <View className="flex-row items-center gap-3">
-              <View className="w-10 h-10 rounded-xl bg-danger/10 items-center justify-center">
-                <Ionicons name="trash-outline" size={20} color="#e7515a" />
+              <View className="w-9 h-9 rounded bg-danger/10 items-center justify-center">
+                <Ionicons name="trash-outline" size={18} color="#e7515a" />
               </View>
               <View>
-                <Text className="text-base font-semibold text-danger">Clear Cache</Text>
-                <Text className="text-xs text-gray-500">Remove temporary files to free space</Text>
+                <Text className="text-sm font-nunito-semibold text-danger">Clear Cache</Text>
+                <Text className="text-xs font-nunito text-vristo-muted">Remove temporary files to free space</Text>
               </View>
             </View>
             {clearingCache ? (
-              <ActivityIndicator size="small" color="#ef233c" />
+              <ActivityIndicator size="small" color="#e7515a" />
             ) : (
-              <View className="bg-danger/10 px-3 py-1.5 rounded-full">
-                <Text className="text-danger font-bold text-xs">Clear</Text>
+              <View className="bg-danger/10 px-3 py-1 rounded border border-danger/20">
+                <Text className="text-danger font-nunito-bold text-xs">Clear</Text>
               </View>
             )}
           </TouchableOpacity>
         </View>
 
-        {/* Section: About */}
-        <View className="bg-white dark:bg-dark rounded-2xl p-5 shadow-3xl mb-6 border border-gray-100 dark:border-gray-800">
-          <View className="flex-row items-center gap-2 mb-3">
-            <Ionicons name="information-circle-outline" size={18} color="#9ca3af" />
-            <Text className="text-sm font-bold text-gray-400 uppercase tracking-wider">About App</Text>
+        {/* About Panel */}
+        <View className="bg-vristo-panel dark:bg-vristo-panel-dark rounded-md shadow-panel mb-6 overflow-hidden border border-vristo-border dark:border-vristo-border-dark">
+          <View className="px-5 py-3 bg-vristo-table-head dark:bg-vristo-table-head-dark border-b border-vristo-border dark:border-vristo-border-dark flex-row items-center gap-2">
+            <Ionicons name="information-circle-outline" size={14} color="#506690" />
+            <Text className="text-xs font-nunito-bold text-vristo-muted uppercase tracking-widest">About App</Text>
           </View>
-          <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
-            MPESA Messages Extractor scans and parses MPESA transactions directly from your device SMS inbox into an offline SQLite database for fast search, reporting, and export.
-          </Text>
+          <View className="px-5 py-4">
+            <Text className="text-sm font-nunito text-vristo-muted leading-6">
+              MPESA Messages Extractor scans and parses MPESA transactions directly from your device SMS inbox into an offline SQLite database for fast search, reporting, and export.
+            </Text>
+          </View>
         </View>
 
-        <View className="items-center mt-6">
-          <Text className="text-gray-400 text-xs text-center font-medium">
-            MPESA Messages Extractor
-          </Text>
-          <Text className="text-gray-400 text-xs text-center mt-1">
+        {/* Footer */}
+        <View className="items-center mt-4 mb-2">
+          <Text className="text-vristo-muted font-nunito text-xs text-center">MPESA Messages Extractor</Text>
+          <Text className="text-vristo-muted font-nunito text-xs text-center mt-0.5">
             © {new Date().getFullYear()} Mpesa Sms Extractor
           </Text>
         </View>
+
       </ScrollView>
 
-      {/* Styled Custom Modal */}
+      {/* Styled Modal */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -290,37 +336,33 @@ export default function MoreScreen() {
         onRequestClose={closeModal}
       >
         <View className="flex-1 justify-center items-center bg-black/60 p-5">
-          <View className="bg-white dark:bg-[#121c2c] rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-gray-100 dark:border-gray-800 items-center">
-            {/* Top Glowing Icon Badge */}
-            <View className={`w-16 h-16 rounded-full items-center justify-center border mb-4 ${currentBadge.bg}`}>
+          <View className="bg-vristo-panel dark:bg-vristo-panel-dark rounded-md w-full max-w-sm p-6 shadow-3xl border border-vristo-border dark:border-vristo-border-dark items-center">
+            
+            {/* Icon */}
+            <View className={`w-14 h-14 rounded-full items-center justify-center mb-4 ${currentColors.iconBg}`}>
               <Ionicons 
                 name={modalConfig.icon || 'information-circle-outline'} 
-                size={34} 
-                color={currentBadge.color} 
+                size={30} 
+                color={currentColors.iconColor} 
               />
             </View>
 
-            {/* Title */}
-            <Text className="text-xl font-extrabold text-black dark:text-white text-center mb-2">
+            <Text className="text-lg font-nunito-black text-black dark:text-white-light text-center mb-2">
               {modalConfig.title}
             </Text>
 
-            {/* Message Body */}
-            <Text className="text-gray-600 dark:text-gray-300 text-center text-sm leading-6 mb-6">
+            <Text className="text-vristo-muted font-nunito text-center text-sm leading-6 mb-6">
               {modalConfig.message}
             </Text>
 
-            {/* Actions */}
             <View className="w-full flex-row gap-3">
               {modalConfig.cancelText && (
                 <TouchableOpacity
                   activeOpacity={0.8}
-                  className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 items-center"
-                  onPress={() => {
-                    closeModal();
-                  }}
+                  className="flex-1 py-2.5 rounded-md border border-vristo-border dark:border-vristo-border-dark items-center"
+                  onPress={closeModal}
                 >
-                  <Text className="font-bold text-gray-700 dark:text-gray-300 text-sm">
+                  <Text className="font-nunito-bold text-vristo-muted text-sm">
                     {modalConfig.cancelText}
                   </Text>
                 </TouchableOpacity>
@@ -328,7 +370,7 @@ export default function MoreScreen() {
 
               <TouchableOpacity
                 activeOpacity={0.85}
-                className={`flex-1 py-3 rounded-xl items-center shadow-lg ${getButtonPrimaryStyle(modalConfig.type)}`}
+                className={`flex-1 py-2.5 rounded-md items-center ${currentColors.btnBg}`}
                 onPress={async () => {
                   if (modalConfig.onConfirm) {
                     await modalConfig.onConfirm();
@@ -337,7 +379,7 @@ export default function MoreScreen() {
                   }
                 }}
               >
-                <Text className="font-bold text-white text-sm">
+                <Text className="font-nunito-bold text-white text-sm">
                   {modalConfig.confirmText || 'OK'}
                 </Text>
               </TouchableOpacity>

@@ -4,9 +4,14 @@ import { MpesaDbMessage } from '../database/queries';
 
 export async function exportToCsv(messages: MpesaDbMessage[]) {
   const header = 'ID,Name,Number,Type,Amount,Date,Source\n';
-  const rows = messages.map(msg => 
-    `"${msg.sms_id}","${msg.parsed_name}","${msg.parsed_number}","${msg.transaction_type}","${msg.amount}","${new Date(msg.date).toLocaleString()}","${msg.source}"`
-  ).join('\n');
+  const rows = messages.map(msg => {
+    const name = msg.parsed_name ? msg.parsed_name.toUpperCase() : '';
+    let number = msg.parsed_number ? msg.parsed_number.trim() : '';
+    if (number.startsWith('0')) number = '+254' + number.substring(1);
+    else if (number.startsWith('254')) number = '+' + number;
+    else if (number && !number.startsWith('+')) number = '+254' + number;
+    return `"${msg.sms_id}","${name}","${number}","${msg.transaction_type}","${msg.amount}","${new Date(msg.date).toLocaleString()}","${msg.source}"`;
+  }).join('\n');
   
   const csvContent = header + rows;
   const file = new File(Paths.cache, `mpesa_export_${Date.now()}.csv`);
@@ -23,9 +28,14 @@ export async function exportToCsv(messages: MpesaDbMessage[]) {
 }
 
 export async function exportToTxt(messages: MpesaDbMessage[]) {
-  const txtContent = messages.map(msg => 
-    `Date: ${new Date(msg.date).toLocaleString()}\nType: ${msg.transaction_type}\nAmount: Ksh ${msg.amount}\nName: ${msg.parsed_name}\nNumber: ${msg.parsed_number}\nSource: ${msg.source}\nOriginal SMS:\n${msg.original_body}\n-------------------------\n`
-  ).join('\n');
+  const txtContent = messages.map(msg => {
+    const name = msg.parsed_name ? msg.parsed_name.toUpperCase() : '';
+    let number = msg.parsed_number ? msg.parsed_number.trim() : '';
+    if (number.startsWith('0')) number = '+254' + number.substring(1);
+    else if (number.startsWith('254')) number = '+' + number;
+    else if (number && !number.startsWith('+')) number = '+254' + number;
+    return `Date: ${new Date(msg.date).toLocaleString()}\nType: ${msg.transaction_type}\nAmount: Ksh ${msg.amount}\nName: ${name}\nNumber: ${number}\nSource: ${msg.source}\nOriginal SMS:\n${msg.original_body}\n-------------------------\n`;
+  }).join('\n');
   
   const file = new File(Paths.cache, `mpesa_export_${Date.now()}.txt`);
   file.create();

@@ -8,7 +8,7 @@ import { initDatabase } from '../database/schema';
 import { MpesaDbMessage, insertMessages, getStats, getMessages, getAllMessages } from '../database/queries';
 import { parseMpesaMessage } from '../services/mpesaParser';
 import { exportToCsv, exportToTxt } from '../services/exportService';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import CustomDatePicker from '../components/CustomDatePicker';
 import { Ionicons } from '@expo/vector-icons';
 
 const SETTINGS_FILE = FileSystem.documentDirectory + 'settings.json';
@@ -72,7 +72,7 @@ export default function HomeScreen() {
     });
   };
 
-  const applyDatePreset = (preset: 'today' | '7days' | '30days' | 'month') => {
+  const applyDatePreset = (preset: 'today' | '7days' | '30days' | 'month' | 'all') => {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
@@ -88,6 +88,8 @@ export default function HomeScreen() {
     } else if (preset === 'month') {
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
+    } else if (preset === 'all') {
+      start.setTime(0);
     }
 
     setFromDate(start);
@@ -142,16 +144,14 @@ export default function HomeScreen() {
         }
       }
 
-      // 1. Call native module
       const rawMessages = await SmsExtractorModule.getMpesaMessages(fromDate.getTime(), toDate.getTime());
       
       if (!rawMessages || rawMessages.length === 0) {
-        showAlert("Info", "No MPESA messages found.", "info");
+        showAlert("Info", "No MPESA messages found for this date range.", "info");
         setExtracting(false);
         return;
       }
 
-      // 2. Parse and map
       const parsedToInsert = rawMessages.map((msg: any) => {
         const parsed = parseMpesaMessage(msg.body);
         return {
@@ -166,16 +166,13 @@ export default function HomeScreen() {
         };
       });
 
-      // 3. Save to SQLite
       await insertMessages(db, parsedToInsert);
-      
-      // 4. Reload UI and save settings
       await loadData(db, 0);
       const now = new Date().toISOString();
       setLastExtract(now);
       await FileSystem.writeAsStringAsync(SETTINGS_FILE, JSON.stringify({ lastExtract: now }));
       
-      showAlert("Success", "Messages extracted and saved successfully!", "success");
+      showAlert("Success", `${rawMessages.length} messages processed successfully!`, "success");
     } catch (e: any) {
       showAlert("Error", e.message || "An error occurred during extraction.", "error");
     } finally {
@@ -186,7 +183,7 @@ export default function HomeScreen() {
   const confirmExtract = () => {
     showConfirm(
       "Extract SMS",
-      "Are you sure you want to extract messages? This may take a few moments.",
+      "Extract MPESA messages for the selected date range?",
       () => handleExtract()
     );
   };
@@ -195,7 +192,7 @@ export default function HomeScreen() {
     if (!db) return;
     showConfirm(
       "Export CSV",
-      "Are you sure you want to export all transactions to a CSV file?",
+      "Export all transactions to a CSV file?",
       async () => {
         const all = await getAllMessages(db);
         await exportToCsv(all);
@@ -207,7 +204,7 @@ export default function HomeScreen() {
     if (!db) return;
     showConfirm(
       "Export TXT",
-      "Are you sure you want to export all transactions to a TXT file?",
+      "Export all transactions to a TXT file?",
       async () => {
         const all = await getAllMessages(db);
         await exportToTxt(all);
@@ -217,236 +214,299 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-black">
+      <View className="flex-1 items-center justify-center bg-vristo-bg dark:bg-vristo-bg-dark">
         <ActivityIndicator size="large" color="#4361ee" />
       </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-black">
+    <SafeAreaView className="flex-1 bg-vristo-bg dark:bg-vristo-bg-dark">
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {/* Header */}
-        <Text className="text-3xl font-bold text-black dark:text-white mb-6">MPESA Dashboard</Text>
         
-        {/* Stats Grid */}
+        {/* Header */}
+        <View className="mb-6">
+          <Text className="text-2xl font-nunito-black text-black dark:text-white-light">MPESA Dashboard</Text>
+          <Text className="text-sm font-nunito text-vristo-muted mt-0.5">Overview of your transactions</Text>
+        </View>
+        
+        {/* Stats Grid — Vristo gradient card style */}
         <View className="flex-row flex-wrap justify-between mb-6">
-          <View className="w-[48%] bg-primary p-4 rounded-xl shadow-3xl mb-4">
-            <Text className="text-white/80 font-semibold mb-1">Total Messages</Text>
-            <Text className="text-white text-2xl font-bold">{stats.total}</Text>
+
+          {/* Total Panel — Blue gradient */}
+          <View className="w-[48%] rounded-md overflow-hidden mb-4 shadow-3xl"
+            style={{ background: undefined }}
+          >
+            <View className="p-4 bg-primary">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-white/80 font-nunito-semibold text-xs uppercase tracking-widest">Total</Text>
+                <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center">
+                  <Ionicons name="layers-outline" size={16} color="rgba(255,255,255,0.9)" />
+                </View>
+              </View>
+              <Text className="text-white text-3xl font-nunito-black">{stats.total}</Text>
+              <Text className="text-white/60 text-xs font-nunito mt-1">Messages</Text>
+            </View>
+            <View className="h-1 bg-[#3a51c7]" />
           </View>
-          <View className="w-[48%] bg-danger p-4 rounded-xl shadow-3xl mb-4">
-            <Text className="text-white/80 font-semibold mb-1">Total Sent</Text>
-            <Text className="text-white text-2xl font-bold">{stats.sent}</Text>
+
+          {/* Sent Panel — Danger */}
+          <View className="w-[48%] rounded-md overflow-hidden mb-4 shadow-3xl">
+            <View className="p-4 bg-danger">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-white/80 font-nunito-semibold text-xs uppercase tracking-widest">Sent</Text>
+                <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center">
+                  <Ionicons name="arrow-up-circle-outline" size={16} color="rgba(255,255,255,0.9)" />
+                </View>
+              </View>
+              <Text className="text-white text-3xl font-nunito-black">{stats.sent}</Text>
+              <Text className="text-white/60 text-xs font-nunito mt-1">Outgoing</Text>
+            </View>
+            <View className="h-1 bg-[#c9373f]" />
           </View>
-          <View className="w-[48%] bg-success p-4 rounded-xl shadow-3xl mb-4">
-            <Text className="text-white/80 font-semibold mb-1">Total Received</Text>
-            <Text className="text-white text-2xl font-bold">{stats.received}</Text>
+
+          {/* Received Panel — Success */}
+          <View className="w-[100%] rounded-md overflow-hidden mb-4 shadow-3xl">
+            <View className="p-4 bg-success flex-row items-center justify-between">
+              <View>
+                <Text className="text-white/80 font-nunito-semibold text-xs uppercase tracking-widest mb-1">Received</Text>
+                <Text className="text-white text-3xl font-nunito-black">{stats.received}</Text>
+                <Text className="text-white/60 text-xs font-nunito mt-1">Incoming transactions</Text>
+              </View>
+              <View className="w-14 h-14 rounded-full bg-white/20 items-center justify-center">
+                <Ionicons name="arrow-down-circle-outline" size={28} color="rgba(255,255,255,0.9)" />
+              </View>
+            </View>
+            <View className="h-1 bg-[#008f48]" />
           </View>
+
         </View>
 
-        {/* Date Filters Card */}
-        <View className="bg-white dark:bg-dark rounded-2xl p-4 shadow-3xl mb-6 border border-gray-100 dark:border-gray-800">
-          <View className="flex-row items-center justify-between mb-3 pb-2 border-b border-gray-100 dark:border-gray-800">
+        {/* Date Filters — Vristo panel */}
+        <View className="bg-vristo-panel dark:bg-vristo-panel-dark rounded-md shadow-panel mb-6 overflow-hidden border border-vristo-border dark:border-vristo-border-dark">
+          {/* Panel header */}
+          <View className="flex-row items-center justify-between px-5 py-4 border-b border-vristo-border dark:border-vristo-border-dark">
             <View className="flex-row items-center gap-2">
-              <Ionicons name="calendar-outline" size={18} color="#4361ee" />
-              <Text className="text-base font-bold text-black dark:text-white">Date Filter Range</Text>
+              <Ionicons name="calendar-outline" size={16} color="#4361ee" />
+              <Text className="text-sm font-nunito-bold text-black dark:text-white-light">Date Filter Range</Text>
             </View>
             <TouchableOpacity 
               onPress={() => applyDatePreset('today')} 
-              className="bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20"
+              className="bg-primary/10 px-3 py-1 rounded border border-primary/20"
             >
-              <Text className="text-xs font-bold text-primary">Reset Today</Text>
+              <Text className="text-xs font-nunito-bold text-primary">Reset</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Quick Presets Bar */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
-            <View className="flex-row gap-2">
+          <View className="px-5 py-4">
+            {/* Quick Presets */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
+              <View className="flex-row gap-2">
+                {(['today', '7days', '30days', 'month', 'all'] as const).map((preset) => (
+                  <TouchableOpacity
+                    key={preset}
+                    onPress={() => applyDatePreset(preset)}
+                    className="bg-[#f6f8fa] dark:bg-[#1a2941] py-1.5 px-3 rounded border border-vristo-border dark:border-vristo-border-dark"
+                  >
+                    <Text className="text-xs font-nunito-semibold text-dark dark:text-white-dark">
+                      {preset === 'today' ? 'Today' : preset === '7days' ? 'Last 7 Days' : preset === '30days' ? 'Last 30 Days' : preset === 'month' ? 'This Month' : 'All Time'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            {/* From / To Pickers */}
+            <View className="flex-row items-center gap-2">
               <TouchableOpacity 
-                onPress={() => applyDatePreset('today')}
-                className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700"
+                activeOpacity={0.8}
+                onPress={() => setShowFromPicker(true)}
+                className="flex-1 bg-[#f6f8fa] dark:bg-[#1a2941] px-3 py-2.5 rounded border border-vristo-border dark:border-vristo-border-dark flex-row items-center justify-between"
               >
-                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">Today</Text>
+                <View className="flex-1">
+                  <Text className="text-[10px] font-nunito-bold text-vristo-muted uppercase tracking-widest mb-0.5">Start Date</Text>
+                  <Text className="text-xs font-nunito-bold text-black dark:text-white-light" numberOfLines={1}>
+                    {fromDate.getTime() === 0 ? 'All Time' : formatDateLabel(fromDate)}
+                  </Text>
+                </View>
+                <View className="w-7 h-7 rounded bg-primary/10 items-center justify-center ml-1">
+                  <Ionicons name="calendar-sharp" size={13} color="#4361ee" />
+                </View>
               </TouchableOpacity>
+
+              <Ionicons name="arrow-forward-outline" size={14} color="#888ea8" />
+
               <TouchableOpacity 
-                onPress={() => applyDatePreset('7days')}
-                className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700"
+                activeOpacity={0.8}
+                onPress={() => setShowToPicker(true)}
+                className="flex-1 bg-[#f6f8fa] dark:bg-[#1a2941] px-3 py-2.5 rounded border border-vristo-border dark:border-vristo-border-dark flex-row items-center justify-between"
               >
-                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">Last 7 Days</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={() => applyDatePreset('30days')}
-                className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700"
-              >
-                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">Last 30 Days</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={() => applyDatePreset('month')}
-                className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700"
-              >
-                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">This Month</Text>
+                <View className="flex-1">
+                  <Text className="text-[10px] font-nunito-bold text-vristo-muted uppercase tracking-widest mb-0.5">End Date</Text>
+                  <Text className="text-xs font-nunito-bold text-black dark:text-white-light" numberOfLines={1}>
+                    {formatDateLabel(toDate)}
+                  </Text>
+                </View>
+                <View className="w-7 h-7 rounded bg-primary/10 items-center justify-center ml-1">
+                  <Ionicons name="calendar-sharp" size={13} color="#4361ee" />
+                </View>
               </TouchableOpacity>
             </View>
-          </ScrollView>
-
-          {/* From / To Input Cards */}
-          <View className="flex-row items-center gap-2">
-            {/* From Card */}
-            <TouchableOpacity 
-              activeOpacity={0.8}
-              onPress={() => setShowFromPicker(true)}
-              className="flex-1 bg-gray-50 dark:bg-black/40 p-3 rounded-xl border border-gray-200 dark:border-gray-700/80 flex-row items-center justify-between"
-            >
-              <View className="flex-1">
-                <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Start Date</Text>
-                <Text className="text-xs font-bold text-black dark:text-white" numberOfLines={1}>{formatDateLabel(fromDate)}</Text>
-              </View>
-              <View className="w-7 h-7 rounded-lg bg-primary/10 items-center justify-center ml-1">
-                <Ionicons name="calendar-sharp" size={14} color="#4361ee" />
-              </View>
-            </TouchableOpacity>
-            
-            {/* Separator icon */}
-            <Ionicons name="arrow-forward-outline" size={14} color="#9ca3af" />
-
-            {/* To Card */}
-            <TouchableOpacity 
-              activeOpacity={0.8}
-              onPress={() => setShowToPicker(true)}
-              className="flex-1 bg-gray-50 dark:bg-black/40 p-3 rounded-xl border border-gray-200 dark:border-gray-700/80 flex-row items-center justify-between"
-            >
-              <View className="flex-1">
-                <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">End Date</Text>
-                <Text className="text-xs font-bold text-black dark:text-white" numberOfLines={1}>{formatDateLabel(toDate)}</Text>
-              </View>
-              <View className="w-7 h-7 rounded-lg bg-primary/10 items-center justify-center ml-1">
-                <Ionicons name="calendar-sharp" size={14} color="#4361ee" />
-              </View>
-            </TouchableOpacity>
           </View>
         </View>
 
         {showFromPicker && (
-          <DateTimePicker
-            value={fromDate}
-            mode="date"
-            display="default"
-            maximumDate={new Date()}
-            onChange={(event, selectedDate) => {
+          <CustomDatePicker
+            visible={showFromPicker}
+            title="Select Start Date"
+            currentDate={fromDate}
+            onClose={() => setShowFromPicker(false)}
+            onSelect={(selectedDate) => {
               setShowFromPicker(false);
-              if (selectedDate) {
-                const newDate = new Date(selectedDate);
-                newDate.setHours(0, 0, 0, 0);
-                setFromDate(newDate);
-              }
+              const newDate = new Date(selectedDate);
+              newDate.setHours(0, 0, 0, 0);
+              setFromDate(newDate);
             }}
           />
         )}
         
         {showToPicker && (
-          <DateTimePicker
-            value={toDate}
-            mode="date"
-            display="default"
-            maximumDate={new Date()}
-            onChange={(event, selectedDate) => {
+          <CustomDatePicker
+            visible={showToPicker}
+            title="Select End Date"
+            currentDate={toDate}
+            onClose={() => setShowToPicker(false)}
+            onSelect={(selectedDate) => {
               setShowToPicker(false);
-              if (selectedDate) {
-                const newDate = new Date(selectedDate);
-                newDate.setHours(23, 59, 59, 999);
-                setToDate(newDate);
-              }
+              const newDate = new Date(selectedDate);
+              newDate.setHours(23, 59, 59, 999);
+              setToDate(newDate);
             }}
           />
         )}
 
-        {/* Action Buttons */}
+        {/* Action Buttons — Vristo btn pattern */}
         <View className="flex-row flex-wrap gap-2 mb-6">
           <TouchableOpacity 
             onPress={confirmExtract} 
             disabled={extracting}
-            className="flex-1 bg-dark py-3 px-4 rounded-lg items-center justify-center shadow-3xl"
+            className="flex-1 flex-row items-center justify-center gap-2 bg-black dark:bg-[#1b2e4b] py-3 px-4 rounded-md border border-black/50 dark:border-vristo-border-dark shadow-3xl"
           >
             {extracting ? (
-               <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color="#fff" />
             ) : (
-               <View className="items-center">
-                 <Text className="text-white font-bold">Extract SMS</Text>
-                 {lastExtract && <Text className="text-gray-400 text-[10px] mt-1 text-center font-semibold">{new Date(lastExtract).toLocaleString()}</Text>}
-               </View>
+              <>
+                <Ionicons name="download-outline" size={16} color="#fff" />
+                <View>
+                  <Text className="text-white font-nunito-bold text-sm">Extract SMS</Text>
+                  {lastExtract && (
+                    <Text className="text-white/50 text-[9px] font-nunito">
+                      Last: {new Date(lastExtract).toLocaleString()}
+                    </Text>
+                  )}
+                </View>
+              </>
             )}
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleExportCsv} className="bg-info py-3 px-4 rounded-lg shadow-3xl">
-            <Text className="text-white font-bold">CSV</Text>
+
+          <TouchableOpacity 
+            onPress={handleExportCsv} 
+            className="flex-row items-center gap-1.5 bg-info py-3 px-4 rounded-md shadow-3xl"
+          >
+            <Ionicons name="document-text-outline" size={15} color="#fff" />
+            <Text className="text-white font-nunito-bold text-sm">CSV</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleExportTxt} className="bg-secondary py-3 px-4 rounded-lg shadow-3xl">
-            <Text className="text-white font-bold">TXT</Text>
+
+          <TouchableOpacity 
+            onPress={handleExportTxt} 
+            className="flex-row items-center gap-1.5 bg-secondary py-3 px-4 rounded-md shadow-3xl"
+          >
+            <Ionicons name="code-outline" size={15} color="#fff" />
+            <Text className="text-white font-nunito-bold text-sm">TXT</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Table */}
-        <View className="bg-white dark:bg-dark rounded-xl overflow-hidden shadow-3xl p-4">
-          <Text className="text-lg font-bold text-black dark:text-white mb-4">Recent Transactions</Text>
+        {/* Transactions Table — Vristo table style */}
+        <View className="bg-vristo-panel dark:bg-vristo-panel-dark rounded-md shadow-panel overflow-hidden border border-vristo-border dark:border-vristo-border-dark">
+          {/* Table Header */}
+          <View className="px-5 py-4 border-b border-vristo-border dark:border-vristo-border-dark flex-row items-center justify-between">
+            <Text className="text-sm font-nunito-bold text-black dark:text-white-light">Recent Transactions</Text>
+            <View className="bg-primary/10 px-2.5 py-1 rounded border border-primary/20">
+              <Text className="text-xs font-nunito-bold text-primary">{stats.total} total</Text>
+            </View>
+          </View>
           
-          <View className="flex-row border-b border-gray-200 dark:border-gray-700 pb-2 mb-2">
-            <Text className="flex-1 font-bold text-gray-500 dark:text-gray-400">Name</Text>
-            <Text className="w-20 font-bold text-gray-500 dark:text-gray-400 text-center">Amount</Text>
-            <Text className="w-16 font-bold text-gray-500 dark:text-gray-400 text-center">Type</Text>
-            <Text className="w-16 font-bold text-gray-500 dark:text-gray-400 text-right">Action</Text>
+          {/* Column Headers */}
+          <View className="flex-row bg-vristo-table-head dark:bg-vristo-table-head-dark px-4 py-3 border-b border-vristo-border dark:border-vristo-border-dark">
+            <Text className="flex-1 text-xs font-nunito-bold text-vristo-muted uppercase tracking-wider">Name</Text>
+            <Text className="w-24 text-xs font-nunito-bold text-vristo-muted uppercase tracking-wider text-center">Amount</Text>
+            <Text className="w-16 text-xs font-nunito-bold text-vristo-muted uppercase tracking-wider text-center">Type</Text>
+            <Text className="w-12 text-xs font-nunito-bold text-vristo-muted uppercase tracking-wider text-right">View</Text>
           </View>
 
+          {/* Rows */}
           {messages.map((msg, idx) => (
-            <View key={idx} className="flex-row border-b border-gray-100 dark:border-gray-800 py-3 items-center">
+            <View key={idx} className="flex-row px-4 py-3 border-b border-vristo-border/40 dark:border-vristo-border-dark items-center">
               <View className="flex-1">
-                <Text className="text-black dark:text-white font-semibold" numberOfLines={1}>{msg.parsed_name}</Text>
-                <Text className="text-xs text-gray-500">{msg.parsed_number}</Text>
-                <Text className="text-xs text-info">{msg.source}</Text>
+                <Text className="text-sm font-nunito-semibold text-black dark:text-white-light" numberOfLines={1}>
+                  {msg.parsed_name || 'Unknown'}
+                </Text>
+                <Text className="text-xs font-nunito text-vristo-muted">{msg.parsed_number}</Text>
               </View>
-              <Text className="w-20 text-center font-bold text-black dark:text-white">{msg.amount}</Text>
-              <Text className={`w-16 text-center text-xs font-bold ${msg.transaction_type === 'Sent' ? 'text-danger' : 'text-success'}`}>
-                {msg.transaction_type}
+              <Text className="w-24 text-center text-sm font-nunito-bold text-black dark:text-white-light">
+                {msg.amount?.toLocaleString()}
               </Text>
-              <TouchableOpacity 
-                className="w-16 items-end"
+              <View className="w-16 items-center">
+                <View className={`px-2 py-0.5 rounded ${msg.transaction_type === 'Sent' ? 'bg-danger/10' : 'bg-success/10'}`}>
+                  <Text className={`text-[10px] font-nunito-bold ${msg.transaction_type === 'Sent' ? 'text-danger' : 'text-success'}`}>
+                    {msg.transaction_type}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                className="w-12 items-end"
                 onPress={() => {
                   setSelectedMsg(msg);
                   setModalVisible(true);
                 }}
               >
-                <Text className="text-primary font-bold">View</Text>
+                <Text className="text-primary font-nunito-bold text-xs">View</Text>
               </TouchableOpacity>
             </View>
           ))}
           
           {messages.length === 0 && (
-            <Text className="text-center text-gray-500 py-8">No messages found.</Text>
+            <View className="py-12 items-center">
+              <Ionicons name="document-outline" size={36} color="#506690" />
+              <Text className="text-center text-vristo-muted font-nunito mt-3">No messages found.</Text>
+              <Text className="text-center text-vristo-muted font-nunito text-xs mt-1">Try extracting SMS first.</Text>
+            </View>
           )}
 
           {/* Pagination */}
-          <View className="flex-row justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <View className="flex-row justify-between items-center px-4 py-3 border-t border-vristo-border dark:border-vristo-border-dark">
             <TouchableOpacity 
               disabled={page === 0} 
               onPress={() => db && loadData(db, page - 1)}
-              className={`py-2 px-4 rounded ${page === 0 ? 'bg-gray-200' : 'bg-primary'}`}
+              className={`py-2 px-4 rounded-md border ${page === 0 ? 'border-vristo-border dark:border-vristo-border-dark bg-transparent' : 'border-primary bg-primary'}`}
             >
-              <Text className={page === 0 ? 'text-gray-400' : 'text-white'}>Previous</Text>
+              <Text className={`text-xs font-nunito-bold ${page === 0 ? 'text-vristo-muted' : 'text-white'}`}>Previous</Text>
             </TouchableOpacity>
             
-            <Text className="text-gray-500 dark:text-gray-400">Page {page + 1}</Text>
+            <Text className="text-vristo-muted font-nunito text-xs">Page {page + 1}</Text>
             
             <TouchableOpacity 
               disabled={messages.length < itemsPerPage} 
               onPress={() => db && loadData(db, page + 1)}
-              className={`py-2 px-4 rounded ${messages.length < itemsPerPage ? 'bg-gray-200' : 'bg-primary'}`}
+              className={`py-2 px-4 rounded-md border ${messages.length < itemsPerPage ? 'border-vristo-border dark:border-vristo-border-dark bg-transparent' : 'border-primary bg-primary'}`}
             >
-              <Text className={messages.length < itemsPerPage ? 'text-gray-400' : 'text-white'}>Next</Text>
+              <Text className={`text-xs font-nunito-bold ${messages.length < itemsPerPage ? 'text-vristo-muted' : 'text-white'}`}>Next</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Per Page Selection */}
-          <View className="flex-row justify-center items-center mt-4 gap-2">
-            <Text className="text-gray-500 text-xs">Items per page:</Text>
+          {/* Per Page */}
+          <View className="flex-row justify-center items-center pb-4 gap-2">
+            <Text className="text-vristo-muted font-nunito text-xs">Rows per page:</Text>
             {[10, 20, 50, 100].map(val => (
               <TouchableOpacity 
                 key={val}
@@ -454,82 +514,102 @@ export default function HomeScreen() {
                   setItemsPerPage(val);
                   if (db) loadData(db, 0, val);
                 }}
-                className={`py-1 px-3 rounded ${itemsPerPage === val ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-800'}`}
+                className={`py-1 px-3 rounded border ${itemsPerPage === val ? 'border-primary bg-primary' : 'border-vristo-border dark:border-vristo-border-dark bg-transparent'}`}
               >
-                <Text className={`text-xs ${itemsPerPage === val ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>{val}</Text>
+                <Text className={`text-xs font-nunito-bold ${itemsPerPage === val ? 'text-white' : 'text-vristo-muted'}`}>{val}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
+
       </ScrollView>
 
       {/* Detail Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View className="flex-1 justify-center items-center bg-black/50 p-4">
-          <View className="bg-white dark:bg-dark rounded-2xl w-full p-6 shadow-3xl">
-            <Text className="text-xl font-bold mb-4 text-black dark:text-white">Transaction Details</Text>
+      <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
+        <View className="flex-1 justify-end bg-black/60">
+          <View className="bg-vristo-panel dark:bg-vristo-panel-dark rounded-t-2xl p-6 shadow-3xl">
+            <View className="flex-row items-center justify-between mb-5 pb-4 border-b border-vristo-border dark:border-vristo-border-dark">
+              <Text className="text-lg font-nunito-black text-black dark:text-white-light">Transaction Details</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons name="close-circle" size={24} color="#506690" />
+              </TouchableOpacity>
+            </View>
             
             {selectedMsg && (
-              <View className="gap-2 mb-6">
-                <Text className="text-gray-500">Name: <Text className="text-black dark:text-white font-semibold">{selectedMsg.parsed_name}</Text></Text>
-                <Text className="text-gray-500">Number: <Text className="text-black dark:text-white font-semibold">{selectedMsg.parsed_number}</Text></Text>
-                <Text className="text-gray-500">Amount: <Text className="text-black dark:text-white font-semibold">Ksh {selectedMsg.amount}</Text></Text>
-                <Text className="text-gray-500">Type: <Text className="text-black dark:text-white font-semibold">{selectedMsg.transaction_type}</Text></Text>
-                <Text className="text-gray-500">Source: <Text className="text-black dark:text-white font-semibold">{selectedMsg.source}</Text></Text>
-                <Text className="text-gray-500">Date: <Text className="text-black dark:text-white font-semibold">{new Date(selectedMsg.date).toLocaleString()}</Text></Text>
-                <Text className="text-gray-500 mt-2">Original Message:</Text>
-                <Text className="text-black dark:text-white p-3 bg-gray-100 dark:bg-black rounded-lg mt-1">{selectedMsg.original_body}</Text>
+              <View className="gap-3 mb-6">
+                {[
+                  { label: 'Name', value: selectedMsg.parsed_name },
+                  { label: 'Number', value: selectedMsg.parsed_number },
+                  { label: 'Amount', value: `Ksh ${selectedMsg.amount}` },
+                  { label: 'Type', value: selectedMsg.transaction_type },
+                  { label: 'Source', value: selectedMsg.source },
+                  { label: 'Date', value: new Date(selectedMsg.date).toLocaleString() },
+                ].map(({ label, value }) => (
+                  <View key={label} className="flex-row items-center">
+                    <Text className="text-vristo-muted font-nunito-semibold text-sm w-20">{label}:</Text>
+                    <Text className="text-black dark:text-white-light font-nunito-bold text-sm flex-1">{value}</Text>
+                  </View>
+                ))}
+                <View className="mt-2">
+                  <Text className="text-vristo-muted font-nunito-semibold text-sm mb-1">Original Message:</Text>
+                  <Text className="text-black dark:text-white-light font-nunito p-3 bg-[#f6f8fa] dark:bg-[#1a2941] rounded-md text-xs leading-5">
+                    {selectedMsg.original_body}
+                  </Text>
+                </View>
               </View>
             )}
 
             <TouchableOpacity 
-              className="bg-primary py-3 rounded-xl items-center shadow-3xl"
+              className="bg-primary py-3 rounded-md items-center"
               onPress={() => setModalVisible(false)}
             >
-              <Text className="text-white font-bold text-lg">Close</Text>
+              <Text className="text-white font-nunito-bold">Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Custom Alert / Confirm Modal */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={customAlert.visible}
-        onRequestClose={() => setCustomAlert(prev => ({...prev, visible: false}))}
-      >
-        <View className="flex-1 justify-center items-center bg-black/50 p-4">
-          <View className="bg-white dark:bg-dark rounded-2xl w-full max-w-sm p-6 shadow-3xl">
-            <Text className={`text-xl font-bold mb-2 ${
-              customAlert.type === 'error' ? 'text-danger' : 
-              customAlert.type === 'success' ? 'text-success' : 
-              'text-black dark:text-white'
+      {/* Alert/Confirm Modal */}
+      <Modal animationType="fade" transparent={true} visible={customAlert.visible} onRequestClose={() => setCustomAlert(prev => ({...prev, visible: false}))}>
+        <View className="flex-1 justify-center items-center bg-black/60 p-5">
+          <View className="bg-vristo-panel dark:bg-vristo-panel-dark rounded-md w-full max-w-sm p-6 shadow-3xl border border-vristo-border dark:border-vristo-border-dark">
+            {/* Icon */}
+            <View className={`w-14 h-14 rounded-full items-center justify-center self-center mb-4 ${
+              customAlert.type === 'error' ? 'bg-danger/10' :
+              customAlert.type === 'success' ? 'bg-success/10' :
+              customAlert.type === 'confirm' ? 'bg-primary/10' : 'bg-info/10'
+            }`}>
+              <Ionicons
+                name={customAlert.type === 'error' ? 'alert-circle-outline' : customAlert.type === 'success' ? 'checkmark-circle-outline' : customAlert.type === 'confirm' ? 'help-circle-outline' : 'information-circle-outline'}
+                size={30}
+                color={customAlert.type === 'error' ? '#e7515a' : customAlert.type === 'success' ? '#00ab55' : '#4361ee'}
+              />
+            </View>
+
+            <Text className={`text-lg font-nunito-black text-center mb-2 ${
+              customAlert.type === 'error' ? 'text-danger' :
+              customAlert.type === 'success' ? 'text-success' :
+              'text-black dark:text-white-light'
             }`}>
               {customAlert.title}
             </Text>
             
-            <Text className="text-gray-600 dark:text-gray-300 mb-6 leading-5">
+            <Text className="text-vristo-muted font-nunito text-center text-sm mb-6 leading-5">
               {customAlert.message}
             </Text>
             
-            <View className="flex-row justify-end gap-3 mt-2">
+            <View className="flex-row gap-3">
               {customAlert.type === 'confirm' && (
                 <TouchableOpacity 
-                  className="py-2 px-4 rounded-lg bg-gray-200 dark:bg-gray-700"
+                  className="flex-1 py-2.5 rounded-md border border-vristo-border dark:border-vristo-border-dark items-center"
                   onPress={() => setCustomAlert(prev => ({...prev, visible: false}))}
                 >
-                  <Text className="font-semibold text-gray-700 dark:text-gray-300">Cancel</Text>
+                  <Text className="font-nunito-bold text-vristo-muted text-sm">Cancel</Text>
                 </TouchableOpacity>
               )}
               
               <TouchableOpacity 
-                className={`py-2 px-6 rounded-lg ${
+                className={`flex-1 py-2.5 rounded-md items-center ${
                   customAlert.type === 'error' ? 'bg-danger' :
                   customAlert.type === 'success' ? 'bg-success' :
                   'bg-primary'
@@ -541,7 +621,7 @@ export default function HomeScreen() {
                   }
                 }}
               >
-                <Text className="font-semibold text-white">
+                <Text className="font-nunito-bold text-white text-sm">
                   {customAlert.type === 'confirm' ? 'Confirm' : 'OK'}
                 </Text>
               </TouchableOpacity>

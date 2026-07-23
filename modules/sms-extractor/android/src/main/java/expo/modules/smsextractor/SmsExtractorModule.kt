@@ -33,14 +33,17 @@ class SmsExtractorModule : Module() {
             val typeIndex = cursor.getColumnIndex("type")
             
             while (cursor.moveToNext()) {
-                val map = mutableMapOf<String, Any>()
-                map["id"] = cursor.getString(idIndex) ?: ""
-                map["address"] = cursor.getString(addressIndex) ?: ""
-                map["date"] = cursor.getLong(dateIndex)
-                map["body"] = cursor.getString(bodyIndex) ?: ""
-                map["type"] = cursor.getInt(typeIndex) // 1 is received, 2 is sent
-                map["source"] = "Phone"
-                mpesaMessages.add(map)
+                val address = cursor.getString(addressIndex) ?: ""
+                if (address.equals("MPESA", ignoreCase = true)) {
+                    val map = mutableMapOf<String, Any>()
+                    map["id"] = cursor.getString(idIndex) ?: ""
+                    map["address"] = address
+                    map["date"] = cursor.getLong(dateIndex)
+                    map["body"] = cursor.getString(bodyIndex) ?: ""
+                    map["type"] = cursor.getInt(typeIndex) // 1 is received, 2 is sent
+                    map["source"] = "Phone"
+                    mpesaMessages.add(map)
+                }
             }
         }
       } catch (e: Exception) {
@@ -64,14 +67,17 @@ class SmsExtractorModule : Module() {
             val typeIndex = cursor.getColumnIndex("type")
             
             while (cursor.moveToNext()) {
-                val map = mutableMapOf<String, Any>()
-                map["id"] = cursor.getString(idIndex) ?: ""
-                map["address"] = cursor.getString(addressIndex) ?: ""
-                map["date"] = cursor.getLong(dateIndex)
-                map["body"] = cursor.getString(bodyIndex) ?: ""
-                map["type"] = cursor.getInt(typeIndex)
-                map["source"] = "SIM"
-                mpesaMessages.add(map)
+                val address = cursor.getString(addressIndex) ?: ""
+                if (address.equals("MPESA", ignoreCase = true)) {
+                    val map = mutableMapOf<String, Any>()
+                    map["id"] = cursor.getString(idIndex) ?: ""
+                    map["address"] = address
+                    map["date"] = cursor.getLong(dateIndex)
+                    map["body"] = cursor.getString(bodyIndex) ?: ""
+                    map["type"] = cursor.getInt(typeIndex)
+                    map["source"] = "SIM"
+                    mpesaMessages.add(map)
+                }
             }
         }
       } catch (e: Exception) {
