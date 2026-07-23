@@ -56,12 +56,14 @@ export function AnimatedSplashOverlay() {
   ) : (
     <View
       onLayout={() => {
-        SplashScreen.hideAsync().finally(() => {
-          // Wait at least MIN_SPLASH_MS so the home page has time to load
-          setTimeout(() => {
+        // Keep native splash behind our full-screen JS overlay.
+        // Only dismiss it after MIN_SPLASH_MS so the user never sees
+        // the native (small/contain) splash at all — our overlay covers it.
+        setTimeout(() => {
+          SplashScreen.hideAsync().finally(() => {
             setAnimate(true);
-          }, MIN_SPLASH_MS);
-        });
+          });
+        }, MIN_SPLASH_MS);
       }}
       style={styles.splashOverlay}>
       {image}
