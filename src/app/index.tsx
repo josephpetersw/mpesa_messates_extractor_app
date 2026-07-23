@@ -72,7 +72,7 @@ export default function HomeScreen() {
     });
   };
 
-  const applyDatePreset = (preset: 'today' | '7days' | '30days' | 'month') => {
+  const applyDatePreset = (preset: 'today' | '7days' | '30days' | 'month' | 'all') => {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
@@ -88,6 +88,8 @@ export default function HomeScreen() {
     } else if (preset === 'month') {
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
+    } else if (preset === 'all') {
+      start.setTime(0);
     }
 
     setFromDate(start);
@@ -287,6 +289,12 @@ export default function HomeScreen() {
               >
                 <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">This Month</Text>
               </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => applyDatePreset('all')}
+                className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700"
+              >
+                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">All Time</Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
 
@@ -300,7 +308,7 @@ export default function HomeScreen() {
             >
               <View className="flex-1">
                 <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Start Date</Text>
-                <Text className="text-xs font-bold text-black dark:text-white" numberOfLines={1}>{formatDateLabel(fromDate)}</Text>
+                <Text className="text-xs font-bold text-black dark:text-white" numberOfLines={1}>{fromDate.getTime() === 0 ? 'All Time' : formatDateLabel(fromDate)}</Text>
               </View>
               <View className="w-7 h-7 rounded-lg bg-primary/10 items-center justify-center ml-1">
                 <Ionicons name="calendar-sharp" size={14} color="#4361ee" />
