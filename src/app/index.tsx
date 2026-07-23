@@ -9,6 +9,7 @@ import { MpesaDbMessage, insertMessages, getStats, getMessages, getAllMessages }
 import { parseMpesaMessage } from '../services/mpesaParser';
 import { exportToCsv, exportToTxt } from '../services/exportService';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
 
 const SETTINGS_FILE = FileSystem.documentDirectory + 'settings.json';
 
@@ -247,7 +248,10 @@ export default function HomeScreen() {
         {/* Date Filters Card */}
         <View className="bg-white dark:bg-dark rounded-2xl p-4 shadow-3xl mb-6 border border-gray-100 dark:border-gray-800">
           <View className="flex-row items-center justify-between mb-3 pb-2 border-b border-gray-100 dark:border-gray-800">
-            <Text className="text-base font-bold text-black dark:text-white">📅 Date Filter Range</Text>
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="calendar-outline" size={18} color="#4361ee" />
+              <Text className="text-base font-bold text-black dark:text-white">Date Filter Range</Text>
+            </View>
             <TouchableOpacity 
               onPress={() => applyDatePreset('today')} 
               className="bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20"
@@ -299,12 +303,12 @@ export default function HomeScreen() {
                 <Text className="text-xs font-bold text-black dark:text-white" numberOfLines={1}>{formatDateLabel(fromDate)}</Text>
               </View>
               <View className="w-7 h-7 rounded-lg bg-primary/10 items-center justify-center ml-1">
-                <Text className="text-xs">🗓️</Text>
+                <Ionicons name="calendar-sharp" size={14} color="#4361ee" />
               </View>
             </TouchableOpacity>
             
             {/* Separator icon */}
-            <Text className="text-gray-400 font-bold text-sm">→</Text>
+            <Ionicons name="arrow-forward-outline" size={14} color="#9ca3af" />
 
             {/* To Card */}
             <TouchableOpacity 
@@ -317,7 +321,7 @@ export default function HomeScreen() {
                 <Text className="text-xs font-bold text-black dark:text-white" numberOfLines={1}>{formatDateLabel(toDate)}</Text>
               </View>
               <View className="w-7 h-7 rounded-lg bg-primary/10 items-center justify-center ml-1">
-                <Text className="text-xs">🗓️</Text>
+                <Ionicons name="calendar-sharp" size={14} color="#4361ee" />
               </View>
             </TouchableOpacity>
           </View>

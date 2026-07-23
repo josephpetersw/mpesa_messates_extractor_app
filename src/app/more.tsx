@@ -4,13 +4,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { Paths } from 'expo-file-system';
 import * as Updates from 'expo-updates';
+import { Ionicons } from '@expo/vector-icons';
+
+type IoniconsName = keyof typeof Ionicons.glyphMap;
 
 type CustomModalConfig = {
   visible: boolean;
   title: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'danger' | 'confirm' | 'update';
-  icon?: string;
+  icon?: IoniconsName;
   confirmText?: string;
   cancelText?: string;
   onConfirm?: () => void | Promise<void>;
@@ -41,7 +44,7 @@ export default function MoreScreen() {
       title: 'Clear App Cache?',
       message: 'Are you sure you want to clear cached temporary files? This will free up storage space on your device without deleting your saved database transactions.',
       type: 'warning',
-      icon: '🗑️',
+      icon: 'trash-outline',
       confirmText: 'Clear Cache',
       cancelText: 'Cancel',
       onConfirm: async () => {
@@ -58,7 +61,7 @@ export default function MoreScreen() {
               title: 'Cache Cleared!',
               message: 'App cache files were successfully deleted.',
               type: 'success',
-              icon: '✨',
+              icon: 'checkmark-circle-outline',
               confirmText: 'Done',
             });
           }, 300);
@@ -69,7 +72,7 @@ export default function MoreScreen() {
               title: 'Clear Failed',
               message: 'An error occurred while clearing cache files.',
               type: 'danger',
-              icon: '⚠️',
+              icon: 'alert-circle-outline',
               confirmText: 'Close',
             });
           }, 300);
@@ -88,7 +91,7 @@ export default function MoreScreen() {
           title: 'Development Mode',
           message: 'Over-The-Air (OTA) updates are disabled while running in development mode.',
           type: 'info',
-          icon: '🛠️',
+          icon: 'construct-outline',
           confirmText: 'Understood',
         });
         return;
@@ -101,7 +104,7 @@ export default function MoreScreen() {
           title: 'Update Available!',
           message: 'A new version of MPESA Extractor is available. Would you like to download and install it now?',
           type: 'update',
-          icon: '🎁',
+          icon: 'cloud-download-outline',
           confirmText: 'Download Update',
           cancelText: 'Later',
           onConfirm: async () => {
@@ -113,7 +116,7 @@ export default function MoreScreen() {
                 title: 'Update Ready!',
                 message: 'The update has been downloaded. Restart the application now to apply the changes.',
                 type: 'success',
-                icon: '🔄',
+                icon: 'reload-circle-outline',
                 confirmText: 'Restart App Now',
                 onConfirm: () => Updates.reloadAsync(),
               });
@@ -122,7 +125,7 @@ export default function MoreScreen() {
                 title: 'Download Failed',
                 message: 'Failed to download the latest update. Please check your network connection.',
                 type: 'danger',
-                icon: '⚠️',
+                icon: 'alert-circle-outline',
                 confirmText: 'Close',
               });
             } finally {
@@ -135,7 +138,7 @@ export default function MoreScreen() {
           title: 'You are Up to Date!',
           message: `Your app is running the latest available version (v${appVersion}). No new updates found.`,
           type: 'success',
-          icon: '🚀',
+          icon: 'checkmark-done-circle-outline',
           confirmText: 'Awesome',
         });
       }
@@ -145,7 +148,7 @@ export default function MoreScreen() {
         title: 'Check Failed',
         message: 'Could not connect to update servers. Please verify your internet connection.',
         type: 'danger',
-        icon: '📡',
+        icon: 'wifi-outline',
         confirmText: 'OK',
       });
     } finally {
@@ -157,14 +160,14 @@ export default function MoreScreen() {
     switch (type) {
       case 'warning':
       case 'danger':
-        return 'bg-danger/10 border-danger/20 text-danger';
+        return { bg: 'bg-danger/10 border-danger/20', color: '#e7515a' };
       case 'success':
-        return 'bg-success/10 border-success/20 text-success';
+        return { bg: 'bg-success/10 border-success/20', color: '#00ab55' };
       case 'update':
-        return 'bg-primary/10 border-primary/20 text-primary';
+        return { bg: 'bg-primary/10 border-primary/20', color: '#4361ee' };
       case 'info':
       default:
-        return 'bg-info/10 border-info/20 text-info';
+        return { bg: 'bg-info/10 border-info/20', color: '#2196f3' };
     }
   };
 
@@ -182,6 +185,8 @@ export default function MoreScreen() {
     }
   };
 
+  const currentBadge = getBadgeStyle(modalConfig.type);
+
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-black">
       <ScrollView contentContainerStyle={{ padding: 16 }}>
@@ -193,7 +198,7 @@ export default function MoreScreen() {
           <View className="flex-row items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
             <View className="flex-row items-center gap-3">
               <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
-                <Text className="text-lg">📱</Text>
+                <Ionicons name="phone-portrait-outline" size={20} color="#4361ee" />
               </View>
               <View>
                 <Text className="text-base font-semibold text-black dark:text-white">App Version</Text>
@@ -214,7 +219,7 @@ export default function MoreScreen() {
           >
             <View className="flex-row items-center gap-3">
               <View className="w-10 h-10 rounded-xl bg-info/10 items-center justify-center">
-                <Text className="text-lg">🔄</Text>
+                <Ionicons name="refresh-outline" size={20} color="#2196f3" />
               </View>
               <View>
                 <Text className="text-base font-semibold text-black dark:text-white">Check for Updates</Text>
@@ -239,7 +244,7 @@ export default function MoreScreen() {
           >
             <View className="flex-row items-center gap-3">
               <View className="w-10 h-10 rounded-xl bg-danger/10 items-center justify-center">
-                <Text className="text-lg">🧹</Text>
+                <Ionicons name="trash-outline" size={20} color="#e7515a" />
               </View>
               <View>
                 <Text className="text-base font-semibold text-danger">Clear Cache</Text>
@@ -258,7 +263,10 @@ export default function MoreScreen() {
 
         {/* Section: About */}
         <View className="bg-white dark:bg-dark rounded-2xl p-5 shadow-3xl mb-6 border border-gray-100 dark:border-gray-800">
-          <Text className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">About App</Text>
+          <View className="flex-row items-center gap-2 mb-3">
+            <Ionicons name="information-circle-outline" size={18} color="#9ca3af" />
+            <Text className="text-sm font-bold text-gray-400 uppercase tracking-wider">About App</Text>
+          </View>
           <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
             MPESA Messages Extractor scans and parses MPESA transactions directly from your device SMS inbox into an offline SQLite database for fast search, reporting, and export.
           </Text>
@@ -284,8 +292,12 @@ export default function MoreScreen() {
         <View className="flex-1 justify-center items-center bg-black/60 p-5">
           <View className="bg-white dark:bg-[#121c2c] rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-gray-100 dark:border-gray-800 items-center">
             {/* Top Glowing Icon Badge */}
-            <View className={`w-16 h-16 rounded-full items-center justify-center border mb-4 ${getBadgeStyle(modalConfig.type)}`}>
-              <Text className="text-3xl">{modalConfig.icon || '💬'}</Text>
+            <View className={`w-16 h-16 rounded-full items-center justify-center border mb-4 ${currentBadge.bg}`}>
+              <Ionicons 
+                name={modalConfig.icon || 'information-circle-outline'} 
+                size={34} 
+                color={currentBadge.color} 
+              />
             </View>
 
             {/* Title */}
