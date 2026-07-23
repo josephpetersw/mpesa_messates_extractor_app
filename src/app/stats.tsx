@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SQLite from 'expo-sqlite';
 import { initDatabase } from '../database/schema';
 import { getAdvancedStats } from '../database/queries';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import CustomDatePicker from '../components/CustomDatePicker';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function StatsScreen() {
@@ -157,35 +157,31 @@ export default function StatsScreen() {
         </View>
 
         {showFromPicker && (
-          <DateTimePicker
-            value={fromDate}
-            mode="date"
-            display="default"
-            maximumDate={new Date()}
-            onChange={(event, selectedDate) => {
+          <CustomDatePicker
+            visible={showFromPicker}
+            title="Select Start Date"
+            currentDate={fromDate}
+            onClose={() => setShowFromPicker(false)}
+            onSelect={(selectedDate) => {
               setShowFromPicker(false);
-              if (selectedDate) {
-                const newDate = new Date(selectedDate);
-                newDate.setHours(0, 0, 0, 0);
-                setFromDate(newDate);
-              }
+              const newDate = new Date(selectedDate);
+              newDate.setHours(0, 0, 0, 0);
+              setFromDate(newDate);
             }}
           />
         )}
         
         {showToPicker && (
-          <DateTimePicker
-            value={toDate}
-            mode="date"
-            display="default"
-            maximumDate={new Date()}
-            onChange={(event, selectedDate) => {
+          <CustomDatePicker
+            visible={showToPicker}
+            title="Select End Date"
+            currentDate={toDate}
+            onClose={() => setShowToPicker(false)}
+            onSelect={(selectedDate) => {
               setShowToPicker(false);
-              if (selectedDate) {
-                const newDate = new Date(selectedDate);
-                newDate.setHours(23, 59, 59, 999);
-                setToDate(newDate);
-              }
+              const newDate = new Date(selectedDate);
+              newDate.setHours(23, 59, 59, 999);
+              setToDate(newDate);
             }}
           />
         )}
