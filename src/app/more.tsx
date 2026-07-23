@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import { Paths } from 'expo-file-system';
 import * as Updates from 'expo-updates';
 import { Ionicons } from '@expo/vector-icons';
+import { useThemePreference, ThemePreference } from '../context/ThemeContext';
 
 type IoniconsName = keyof typeof Ionicons.glyphMap;
 
@@ -22,6 +23,7 @@ type CustomModalConfig = {
 export default function MoreScreen() {
   const [clearingCache, setClearingCache] = useState(false);
   const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const { preference, setPreference } = useThemePreference();
   const [modalConfig, setModalConfig] = useState<CustomModalConfig>({
     visible: false,
     title: '',
@@ -180,6 +182,52 @@ export default function MoreScreen() {
         <View className="mb-6">
           <Text className="text-2xl font-nunito-black text-black dark:text-white-light">More</Text>
           <Text className="text-sm font-nunito text-vristo-muted mt-0.5">App settings and information</Text>
+        </View>
+
+        {/* Appearance Panel */}
+        <View className="bg-vristo-panel dark:bg-vristo-panel-dark rounded-md shadow-panel mb-6 overflow-hidden border border-vristo-border dark:border-vristo-border-dark">
+          <View className="px-5 py-3 bg-vristo-table-head dark:bg-vristo-table-head-dark border-b border-vristo-border dark:border-vristo-border-dark flex-row items-center gap-2">
+            <Ionicons name="color-palette-outline" size={14} color="#506690" />
+            <Text className="text-xs font-nunito-bold text-vristo-muted uppercase tracking-widest">Appearance</Text>
+          </View>
+
+          <View className="px-5 py-4">
+            <Text className="text-sm font-nunito-semibold text-black dark:text-white-light mb-1">Theme Mode</Text>
+            <Text className="text-xs font-nunito text-vristo-muted mb-4">Choose how the app looks on your device</Text>
+
+            <View className="flex-row gap-3">
+              {([
+                { key: 'light', label: 'Light', icon: 'sunny-outline' },
+                { key: 'dark',  label: 'Dark',  icon: 'moon-outline' },
+                { key: 'system', label: 'System', icon: 'phone-portrait-outline' },
+              ] as { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[]).map(({ key, label, icon }) => {
+                const isActive = preference === key;
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    onPress={() => setPreference(key)}
+                    activeOpacity={0.8}
+                    className={`flex-1 items-center py-3 rounded-md border ${
+                      isActive
+                        ? 'bg-primary border-primary'
+                        : 'bg-[#f6f8fa] dark:bg-[#1a2941] border-vristo-border dark:border-vristo-border-dark'
+                    }`}
+                  >
+                    <Ionicons
+                      name={icon}
+                      size={22}
+                      color={isActive ? '#ffffff' : '#506690'}
+                    />
+                    <Text className={`text-xs font-nunito-bold mt-1.5 ${
+                      isActive ? 'text-white' : 'text-vristo-muted'
+                    }`}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
         </View>
 
         {/* App Management Panel */}
