@@ -134,7 +134,7 @@ export default function MoreScreen() {
             MPESA Messages Extractor
           </Text>
           <Text className="text-gray-400 text-xs text-center mt-1">
-            © {new Date().getFullYear()} Zestra Capital
+            © {new Date().getFullYear()} Mpesa Sms Extractor
           </Text>
         </View>
       </ScrollView>
