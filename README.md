@@ -35,7 +35,7 @@ Because this project utilizes a **custom native module** for SMS extraction, it 
 
 This project is fully configured for EAS (Expo Application Services) to handle both cloud builds and Over-The-Air (OTA) updates.
 
-### 1. Building the APK
+### 1. Building the APK 
 
 To build an APK directly on your **local machine**:
 ```bash
