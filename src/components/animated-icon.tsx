@@ -6,7 +6,8 @@ import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
-const DURATION = 600;
+const DURATION = 800;
+const MIN_SPLASH_MS = 2500; // minimum time splash stays visible
 
 export function AnimatedSplashOverlay() {
   const [animate, setAnimate] = useState(false);
@@ -36,7 +37,7 @@ export function AnimatedSplashOverlay() {
   const image = (
     <Image 
       style={styles.splashImage} 
-      contentFit="contain" 
+      contentFit="cover"
       source={require('@/assets/images/splash.png')} 
     />
   );
@@ -56,7 +57,10 @@ export function AnimatedSplashOverlay() {
     <View
       onLayout={() => {
         SplashScreen.hideAsync().finally(() => {
-          setAnimate(true);
+          // Wait at least MIN_SPLASH_MS so the home page has time to load
+          setTimeout(() => {
+            setAnimate(true);
+          }, MIN_SPLASH_MS);
         });
       }}
       style={styles.splashOverlay}>
@@ -124,8 +128,8 @@ const styles = StyleSheet.create({
     height: 71,
   },
   splashImage: {
-    width: '80%',
-    height: '70%',
+    width: '100%',
+    height: '100%',
   },
   background: {
     borderRadius: 40,
