@@ -15,17 +15,20 @@ export default function CustomDatePicker({ visible, currentDate, onClose, onSele
   const isDark = colorScheme === 'dark';
 
   const theme = {
-    backgroundColor: isDark ? '#111111' : '#ffffff',
-    calendarBackground: isDark ? '#111111' : '#ffffff',
-    textSectionTitleColor: isDark ? '#9ca3af' : '#6b7280',
+    backgroundColor: isDark ? '#1b2e4b' : '#ffffff',
+    calendarBackground: isDark ? '#1b2e4b' : '#ffffff',
+    textSectionTitleColor: isDark ? '#888ea8' : '#506690',
     selectedDayBackgroundColor: '#4361ee',
     selectedDayTextColor: '#ffffff',
     todayTextColor: '#4361ee',
-    dayTextColor: isDark ? '#ffffff' : '#000000',
-    textDisabledColor: isDark ? '#333333' : '#d1d5db',
+    dayTextColor: isDark ? '#e0e6ed' : '#0e1726',
+    textDisabledColor: isDark ? '#3b3f5c' : '#e0e6ed',
     arrowColor: '#4361ee',
-    monthTextColor: isDark ? '#ffffff' : '#000000',
+    monthTextColor: isDark ? '#e0e6ed' : '#0e1726',
     indicatorColor: '#4361ee',
+    textDayFontFamily: 'Nunito_400Regular',
+    textMonthFontFamily: 'Nunito_700Bold',
+    textDayHeaderFontFamily: 'Nunito_600SemiBold',
   };
 
   const currentDateString = currentDate.toISOString().split('T')[0];
@@ -37,12 +40,15 @@ export default function CustomDatePicker({ visible, currentDate, onClose, onSele
       visible={visible}
       onRequestClose={onClose}
     >
-      <View className="flex-1 justify-center items-center bg-black/50 p-4">
-        <View className="bg-white dark:bg-[#111111] rounded-2xl w-full max-w-sm p-4 shadow-3xl">
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-xl font-bold text-black dark:text-white pl-2">{title}</Text>
-            <TouchableOpacity onPress={onClose} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
-              <Text className="text-gray-500 dark:text-gray-400 font-bold">✕</Text>
+      <View className="flex-1 justify-center items-center bg-black/60 p-4">
+        <View
+          className="rounded-md w-full max-w-sm p-4 shadow-3xl border border-vristo-border dark:border-vristo-border-dark"
+          style={{ backgroundColor: isDark ? '#1b2e4b' : '#ffffff' }}
+        >
+          <View className="flex-row justify-between items-center mb-4 pb-3 border-b border-vristo-border dark:border-vristo-border-dark">
+            <Text className="text-base font-nunito-bold text-black dark:text-white-light">{title}</Text>
+            <TouchableOpacity onPress={onClose} className="w-8 h-8 bg-[#f6f8fa] dark:bg-[#1a2941] rounded items-center justify-center">
+              <Text className="text-vristo-muted font-nunito-bold text-sm">✕</Text>
             </TouchableOpacity>
           </View>
           

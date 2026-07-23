@@ -21,7 +21,7 @@ export default function StatsScreen() {
 
   const [fromDate, setFromDate] = useState(() => {
     const d = new Date();
-    d.setDate(1); // Default to start of month
+    d.setDate(1);
     d.setHours(0, 0, 0, 0);
     return d;
   });
@@ -93,71 +93,88 @@ export default function StatsScreen() {
     setToDate(end);
   };
 
+  const formatKsh = (n: number) =>
+    n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-black">
+      <View className="flex-1 items-center justify-center bg-vristo-bg dark:bg-vristo-bg-dark">
         <ActivityIndicator size="large" color="#4361ee" />
       </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-black">
+    <SafeAreaView className="flex-1 bg-vristo-bg dark:bg-vristo-bg-dark">
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {/* Header */}
-        <Text className="text-3xl font-bold text-black dark:text-white mb-6">Payment Stats</Text>
 
-        {/* Date Filters Card */}
-        <View className="bg-white dark:bg-dark rounded-2xl p-4 shadow-3xl mb-6 border border-gray-100 dark:border-gray-800">
-          <View className="flex-row items-center justify-between mb-3 pb-2 border-b border-gray-100 dark:border-gray-800">
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="calendar-outline" size={18} color="#4361ee" />
-              <Text className="text-base font-bold text-black dark:text-white">Filter Range</Text>
-            </View>
+        {/* Header */}
+        <View className="mb-6">
+          <Text className="text-2xl font-nunito-black text-black dark:text-white-light">Payment Stats</Text>
+          <Text className="text-sm font-nunito text-vristo-muted mt-0.5">Summary of your MPESA activity</Text>
+        </View>
+
+        {/* Date Filters Panel */}
+        <View className="bg-vristo-panel dark:bg-vristo-panel-dark rounded-md shadow-panel mb-6 overflow-hidden border border-vristo-border dark:border-vristo-border-dark">
+          <View className="flex-row items-center gap-2 px-5 py-4 border-b border-vristo-border dark:border-vristo-border-dark">
+            <Ionicons name="calendar-outline" size={16} color="#4361ee" />
+            <Text className="text-sm font-nunito-bold text-black dark:text-white-light">Filter Range</Text>
           </View>
 
-          {/* Quick Presets Bar */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
-            <View className="flex-row gap-2">
-              <TouchableOpacity onPress={() => applyDatePreset('today')} className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">Today</Text>
+          <View className="px-5 py-4">
+            {/* Quick Presets */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
+              <View className="flex-row gap-2">
+                {(['today', '7days', '30days', 'month', 'all'] as const).map((preset) => (
+                  <TouchableOpacity
+                    key={preset}
+                    onPress={() => applyDatePreset(preset)}
+                    className="bg-[#f6f8fa] dark:bg-[#1a2941] py-1.5 px-3 rounded border border-vristo-border dark:border-vristo-border-dark"
+                  >
+                    <Text className="text-xs font-nunito-semibold text-dark dark:text-white-dark">
+                      {preset === 'today' ? 'Today' : preset === '7days' ? 'Last 7 Days' : preset === '30days' ? 'Last 30 Days' : preset === 'month' ? 'This Month' : 'All Time'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            {/* From / To */}
+            <View className="flex-row items-center gap-2">
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setShowFromPicker(true)}
+                className="flex-1 bg-[#f6f8fa] dark:bg-[#1a2941] px-3 py-2.5 rounded border border-vristo-border dark:border-vristo-border-dark flex-row items-center justify-between"
+              >
+                <View className="flex-1">
+                  <Text className="text-[10px] font-nunito-bold text-vristo-muted uppercase tracking-widest mb-0.5">Start Date</Text>
+                  <Text className="text-xs font-nunito-bold text-black dark:text-white-light" numberOfLines={1}>
+                    {fromDate.getTime() === 0 ? 'All Time' : formatDateLabel(fromDate)}
+                  </Text>
+                </View>
+                <View className="w-7 h-7 rounded bg-primary/10 items-center justify-center ml-1">
+                  <Ionicons name="calendar-sharp" size={13} color="#4361ee" />
+                </View>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => applyDatePreset('7days')} className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">Last 7 Days</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => applyDatePreset('30days')} className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">Last 30 Days</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => applyDatePreset('month')} className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">This Month</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => applyDatePreset('all')} className="bg-gray-100 dark:bg-gray-800 py-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                <Text className="text-xs font-semibold text-gray-700 dark:text-gray-300">All Time</Text>
+
+              <Ionicons name="arrow-forward-outline" size={14} color="#888ea8" />
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setShowToPicker(true)}
+                className="flex-1 bg-[#f6f8fa] dark:bg-[#1a2941] px-3 py-2.5 rounded border border-vristo-border dark:border-vristo-border-dark flex-row items-center justify-between"
+              >
+                <View className="flex-1">
+                  <Text className="text-[10px] font-nunito-bold text-vristo-muted uppercase tracking-widest mb-0.5">End Date</Text>
+                  <Text className="text-xs font-nunito-bold text-black dark:text-white-light" numberOfLines={1}>
+                    {formatDateLabel(toDate)}
+                  </Text>
+                </View>
+                <View className="w-7 h-7 rounded bg-primary/10 items-center justify-center ml-1">
+                  <Ionicons name="calendar-sharp" size={13} color="#4361ee" />
+                </View>
               </TouchableOpacity>
             </View>
-          </ScrollView>
-
-          {/* From / To Input Cards */}
-          <View className="flex-row items-center gap-2">
-            <TouchableOpacity activeOpacity={0.8} onPress={() => setShowFromPicker(true)} className="flex-1 bg-gray-50 dark:bg-black/40 p-3 rounded-xl border border-gray-200 dark:border-gray-700/80 flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Start Date</Text>
-                <Text className="text-xs font-bold text-black dark:text-white" numberOfLines={1}>{fromDate.getTime() === 0 ? 'All Time' : formatDateLabel(fromDate)}</Text>
-              </View>
-              <View className="w-7 h-7 rounded-lg bg-primary/10 items-center justify-center ml-1">
-                <Ionicons name="calendar-sharp" size={14} color="#4361ee" />
-              </View>
-            </TouchableOpacity>
-            <Ionicons name="arrow-forward-outline" size={14} color="#9ca3af" />
-            <TouchableOpacity activeOpacity={0.8} onPress={() => setShowToPicker(true)} className="flex-1 bg-gray-50 dark:bg-black/40 p-3 rounded-xl border border-gray-200 dark:border-gray-700/80 flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">End Date</Text>
-                <Text className="text-xs font-bold text-black dark:text-white" numberOfLines={1}>{formatDateLabel(toDate)}</Text>
-              </View>
-              <View className="w-7 h-7 rounded-lg bg-primary/10 items-center justify-center ml-1">
-                <Ionicons name="calendar-sharp" size={14} color="#4361ee" />
-              </View>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -191,36 +208,95 @@ export default function StatsScreen() {
           />
         )}
 
-        {/* Amount Stats */}
-        <View className="mb-6">
-          <View className="bg-primary p-6 rounded-2xl shadow-3xl mb-4">
-            <View className="flex-row items-center gap-2 mb-2">
-              <Ionicons name="wallet-outline" size={20} color="rgba(255,255,255,0.8)" />
-              <Text className="text-white/80 font-bold uppercase tracking-wider text-sm">Total Transacted</Text>
+        {/* Total Transacted — Vristo gradient blue card */}
+        <View
+          className="rounded-md overflow-hidden mb-4 shadow-panel"
+          style={{ backgroundColor: '#4361ee' }}
+        >
+          {/* Decorative blob */}
+          <View className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/5" />
+          <View className="absolute -right-4 top-10 w-24 h-24 rounded-full bg-white/5" />
+
+          <View className="p-6 z-10">
+            <View className="flex-row items-center gap-2 mb-4">
+              <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
+                <Ionicons name="wallet-outline" size={20} color="rgba(255,255,255,0.9)" />
+              </View>
+              <Text className="text-white/80 font-nunito-bold text-sm uppercase tracking-widest">Total Transacted</Text>
             </View>
-            <Text className="text-white text-4xl font-black">Ksh {stats.totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</Text>
-            <Text className="text-white/70 mt-2 text-xs font-semibold">{stats.total} Total Transactions</Text>
+            <Text className="text-white text-4xl font-nunito-black">
+              Ksh {formatKsh(stats.totalAmount)}
+            </Text>
+            <View className="flex-row items-center mt-3 gap-2">
+              <View className="bg-white/20 px-2.5 py-1 rounded">
+                <Text className="text-white/90 font-nunito-bold text-xs">{stats.total} transactions</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Received / Sent Row */}
+        <View className="flex-row gap-4 mb-6">
+          {/* Received */}
+          <View className="flex-1 bg-vristo-panel dark:bg-vristo-panel-dark rounded-md shadow-panel border border-vristo-border dark:border-vristo-border-dark overflow-hidden">
+            <View className="h-1 bg-success" />
+            <View className="p-4">
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-xs font-nunito-bold text-vristo-muted uppercase tracking-widest">Received</Text>
+                <View className="w-9 h-9 rounded-full bg-success/10 items-center justify-center">
+                  <Ionicons name="arrow-down-circle-outline" size={18} color="#00ab55" />
+                </View>
+              </View>
+              <Text className="text-success text-2xl font-nunito-black mb-1">
+                Ksh {formatKsh(stats.receivedAmount)}
+              </Text>
+              <View className="flex-row items-center gap-1">
+                <View className="w-1.5 h-1.5 rounded-full bg-success" />
+                <Text className="text-vristo-muted font-nunito text-xs">{stats.received} transactions</Text>
+              </View>
+            </View>
           </View>
 
-          <View className="flex-row justify-between">
-             <View className="w-[48%] bg-success p-5 rounded-2xl shadow-3xl">
-                <View className="flex-row items-center gap-2 mb-2">
-                  <Ionicons name="arrow-down-circle-outline" size={18} color="rgba(255,255,255,0.8)" />
-                  <Text className="text-white/80 font-bold uppercase tracking-wider text-xs">Received</Text>
+          {/* Sent */}
+          <View className="flex-1 bg-vristo-panel dark:bg-vristo-panel-dark rounded-md shadow-panel border border-vristo-border dark:border-vristo-border-dark overflow-hidden">
+            <View className="h-1 bg-danger" />
+            <View className="p-4">
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-xs font-nunito-bold text-vristo-muted uppercase tracking-widest">Sent</Text>
+                <View className="w-9 h-9 rounded-full bg-danger/10 items-center justify-center">
+                  <Ionicons name="arrow-up-circle-outline" size={18} color="#e7515a" />
                 </View>
-                <Text className="text-white text-xl font-bold mb-1">Ksh {stats.receivedAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</Text>
-                <Text className="text-white/70 text-xs font-semibold">{stats.received} count</Text>
-             </View>
-
-             <View className="w-[48%] bg-danger p-5 rounded-2xl shadow-3xl">
-                <View className="flex-row items-center gap-2 mb-2">
-                  <Ionicons name="arrow-up-circle-outline" size={18} color="rgba(255,255,255,0.8)" />
-                  <Text className="text-white/80 font-bold uppercase tracking-wider text-xs">Sent</Text>
-                </View>
-                <Text className="text-white text-xl font-bold mb-1">Ksh {stats.sentAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</Text>
-                <Text className="text-white/70 text-xs font-semibold">{stats.sent} count</Text>
-             </View>
+              </View>
+              <Text className="text-danger text-2xl font-nunito-black mb-1">
+                Ksh {formatKsh(stats.sentAmount)}
+              </Text>
+              <View className="flex-row items-center gap-1">
+                <View className="w-1.5 h-1.5 rounded-full bg-danger" />
+                <Text className="text-vristo-muted font-nunito text-xs">{stats.sent} transactions</Text>
+              </View>
+            </View>
           </View>
+        </View>
+
+        {/* Summary breakdown panel */}
+        <View className="bg-vristo-panel dark:bg-vristo-panel-dark rounded-md shadow-panel border border-vristo-border dark:border-vristo-border-dark overflow-hidden mb-6">
+          <View className="px-5 py-4 border-b border-vristo-border dark:border-vristo-border-dark">
+            <Text className="text-sm font-nunito-bold text-black dark:text-white-light">Breakdown</Text>
+          </View>
+          {[
+            { label: 'Total Transactions', value: stats.total.toString(), icon: 'swap-horizontal-outline' as const, color: '#4361ee' },
+            { label: 'Money Received', value: `Ksh ${formatKsh(stats.receivedAmount)}`, icon: 'arrow-down-circle-outline' as const, color: '#00ab55' },
+            { label: 'Money Sent', value: `Ksh ${formatKsh(stats.sentAmount)}`, icon: 'arrow-up-circle-outline' as const, color: '#e7515a' },
+            { label: 'Net Flow', value: `Ksh ${formatKsh(stats.receivedAmount - stats.sentAmount)}`, icon: 'trending-up-outline' as const, color: stats.receivedAmount >= stats.sentAmount ? '#00ab55' : '#e7515a' },
+          ].map(({ label, value, icon, color }, idx) => (
+            <View key={idx} className="flex-row items-center px-5 py-3.5 border-b border-vristo-border/40 dark:border-vristo-border-dark">
+              <View className="w-9 h-9 rounded-full items-center justify-center mr-3" style={{ backgroundColor: `${color}18` }}>
+                <Ionicons name={icon} size={18} color={color} />
+              </View>
+              <Text className="flex-1 text-sm font-nunito-semibold text-vristo-muted">{label}</Text>
+              <Text className="text-sm font-nunito-bold text-black dark:text-white-light">{value}</Text>
+            </View>
+          ))}
         </View>
 
       </ScrollView>
