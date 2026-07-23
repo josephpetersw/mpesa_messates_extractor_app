@@ -9,18 +9,20 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
+    text: '#0e1726', // Vristo black
     background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    backgroundElement: '#eaf1ff', // Vristo primary.light
+    backgroundSelected: '#e0e6ed', // Vristo white.light
+    textSecondary: '#888ea8', // Vristo white.dark
+    primary: '#4361ee', // Vristo primary
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#e0e6ed', // Vristo white.light
+    background: '#0e1726', // Vristo black
+    backgroundElement: '#1b2e4b', // Vristo darkish element
+    backgroundSelected: '#3b3f5c', // Vristo dark
+    textSecondary: '#888ea8', // Vristo white.dark
+    primary: '#4361ee', // Vristo primary
   },
 } as const;
 
