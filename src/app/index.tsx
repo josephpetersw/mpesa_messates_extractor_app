@@ -242,6 +242,7 @@ export default function HomeScreen() {
             value={fromDate}
             mode="date"
             display="default"
+            maximumDate={new Date()}
             onChange={(event, selectedDate) => {
               setShowFromPicker(false);
               if (selectedDate) {
@@ -258,6 +259,7 @@ export default function HomeScreen() {
             value={toDate}
             mode="date"
             display="default"
+            maximumDate={new Date()}
             onChange={(event, selectedDate) => {
               setShowToPicker(false);
               if (selectedDate) {

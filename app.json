@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mpesamessatesextractorapp",
+    "platforms": ["ios", "android"],
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
