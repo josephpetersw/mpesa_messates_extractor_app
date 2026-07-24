@@ -7,7 +7,7 @@ import SmsExtractorModule from '../../modules/sms-extractor/src/SmsExtractorModu
 import { initDatabase } from '../database/schema';
 import { MpesaDbMessage, insertMessages, getStats, getMessages, getAllMessages } from '../database/queries';
 import { parseMpesaMessage } from '../services/mpesaParser';
-import { exportToCsv, exportToTxt } from '../services/exportService';
+import { exportToCsv, exportToTxt, exportToGoogleContactsCsv } from '../services/exportService';
 import CustomDatePicker from '../components/CustomDatePicker';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -211,6 +211,19 @@ export default function HomeScreen() {
       }
     );
   };
+
+  const handleExportContacts = () => {
+    if (!db) return;
+    showConfirm(
+      "Export Contacts",
+      "Export unique contacts to a Google Contacts CSV file?",
+      async () => {
+        const all = await getAllMessages(db);
+        await exportToGoogleContactsCsv(all);
+      }
+    );
+  };
+
 
   if (loading) {
     return (
@@ -423,6 +436,14 @@ export default function HomeScreen() {
           >
             <Ionicons name="code-outline" size={15} color="#fff" />
             <Text className="text-white font-nunito-bold text-sm">TXT</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={handleExportContacts} 
+            className="flex-row items-center gap-1.5 bg-warning py-3 px-4 rounded-md shadow-3xl"
+          >
+            <Ionicons name="people-outline" size={15} color="#fff" />
+            <Text className="text-white font-nunito-bold text-sm">Contacts</Text>
           </TouchableOpacity>
         </View>
 
