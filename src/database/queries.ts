@@ -16,7 +16,7 @@ export async function insertMessages(db: SQLite.SQLiteDatabase, messages: Omit<M
   // Use a transaction for bulk insert
   await db.withTransactionAsync(async () => {
     const statement = await db.prepareAsync(
-      `INSERT OR IGNORE INTO messages (sms_id, original_body, parsed_name, parsed_number, transaction_type, amount, date, source) 
+      `INSERT OR REPLACE INTO messages (sms_id, original_body, parsed_name, parsed_number, transaction_type, amount, date, source) 
        VALUES ($sms_id, $original_body, $parsed_name, $parsed_number, $transaction_type, $amount, $date, $source)`
     );
     try {
