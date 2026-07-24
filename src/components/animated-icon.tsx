@@ -2,11 +2,14 @@ import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
 import { useState } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
+
+const SCREEN = Dimensions.get('screen');
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
-const DURATION = 600;
+const DURATION = 800;
+const MIN_SPLASH_MS = 2500; // minimum time splash stays visible
 
 export function AnimatedSplashOverlay() {
   const [animate, setAnimate] = useState(false);
@@ -36,7 +39,7 @@ export function AnimatedSplashOverlay() {
   const image = (
     <Image 
       style={styles.splashImage} 
-      contentFit="contain" 
+      contentFit="cover"
       source={require('@/assets/images/splash.png')} 
     />
   );
@@ -55,9 +58,14 @@ export function AnimatedSplashOverlay() {
   ) : (
     <View
       onLayout={() => {
-        SplashScreen.hideAsync().finally(() => {
-          setAnimate(true);
-        });
+        // Keep native splash behind our full-screen JS overlay.
+        // Only dismiss it after MIN_SPLASH_MS so the user never sees
+        // the native (small/contain) splash at all — our overlay covers it.
+        setTimeout(() => {
+          SplashScreen.hideAsync().finally(() => {
+            setAnimate(true);
+          });
+        }, MIN_SPLASH_MS);
       }}
       style={styles.splashOverlay}>
       {image}
@@ -124,8 +132,11 @@ const styles = StyleSheet.create({
     height: 71,
   },
   splashImage: {
-    width: '80%',
-    height: '70%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SCREEN.width,
+    height: SCREEN.height,
   },
   background: {
     borderRadius: 40,
@@ -137,8 +148,6 @@ const styles = StyleSheet.create({
   splashOverlay: {
     ...StyleSheet.absoluteFill,
     backgroundColor: '#fafafa',
-    alignItems: 'center',
-    justifyContent: 'center',
     zIndex: 1000,
   },
 });
