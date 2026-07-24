@@ -399,21 +399,21 @@ export default function HomeScreen() {
         )}
 
         {/* Action Buttons — Vristo btn pattern */}
-        <View className="flex-row flex-wrap gap-2 mb-6">
+        <View className="flex-col gap-2 mb-6">
           <TouchableOpacity 
             onPress={confirmExtract} 
             disabled={extracting}
-            className="flex-1 flex-row items-center justify-center gap-2 bg-black dark:bg-[#1b2e4b] py-3 px-4 rounded-md border border-black/50 dark:border-vristo-border-dark shadow-3xl"
+            className="flex-row items-center justify-center gap-2 bg-black dark:bg-[#1b2e4b] py-3 px-4 rounded-md border border-black/50 dark:border-vristo-border-dark shadow-3xl"
           >
             {extracting ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <>
                 <Ionicons name="download-outline" size={16} color="#fff" />
-                <View>
+                <View className="items-center">
                   <Text className="text-white font-nunito-bold text-sm">Extract SMS</Text>
                   {lastExtract && (
-                    <Text className="text-white/50 text-[9px] font-nunito">
+                    <Text className="text-white/50 text-[10px] font-nunito mt-0.5">
                       Last: {new Date(lastExtract).toLocaleString()}
                     </Text>
                   )}
@@ -422,29 +422,31 @@ export default function HomeScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            onPress={handleExportCsv} 
-            className="flex-row items-center gap-1.5 bg-info py-3 px-4 rounded-md shadow-3xl"
-          >
-            <Ionicons name="document-text-outline" size={15} color="#fff" />
-            <Text className="text-white font-nunito-bold text-sm">CSV</Text>
-          </TouchableOpacity>
+          <View className="flex-row gap-2">
+            <TouchableOpacity 
+              onPress={handleExportCsv} 
+              className="flex-1 flex-row items-center justify-center gap-1.5 bg-info py-3 px-2 rounded-md shadow-3xl"
+            >
+              <Ionicons name="document-text-outline" size={15} color="#fff" />
+              <Text className="text-white font-nunito-bold text-sm">CSV</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            onPress={handleExportTxt} 
-            className="flex-row items-center gap-1.5 bg-secondary py-3 px-4 rounded-md shadow-3xl"
-          >
-            <Ionicons name="code-outline" size={15} color="#fff" />
-            <Text className="text-white font-nunito-bold text-sm">TXT</Text>
-          </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={handleExportTxt} 
+              className="flex-1 flex-row items-center justify-center gap-1.5 bg-secondary py-3 px-2 rounded-md shadow-3xl"
+            >
+              <Ionicons name="code-outline" size={15} color="#fff" />
+              <Text className="text-white font-nunito-bold text-sm">TXT</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            onPress={handleExportContacts} 
-            className="flex-row items-center gap-1.5 bg-warning py-3 px-4 rounded-md shadow-3xl"
-          >
-            <Ionicons name="people-outline" size={15} color="#fff" />
-            <Text className="text-white font-nunito-bold text-sm">Contacts</Text>
-          </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={handleExportContacts} 
+              className="flex-1 flex-row items-center justify-center gap-1.5 bg-warning py-3 px-2 rounded-md shadow-3xl"
+            >
+              <Ionicons name="people-outline" size={15} color="#fff" />
+              <Text className="text-white font-nunito-bold text-sm">Contacts</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Transactions Table — Vristo table style */}
