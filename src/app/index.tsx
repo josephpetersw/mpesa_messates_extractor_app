@@ -248,7 +248,7 @@ export default function HomeScreen() {
 
           {/* Total Panel — Blue gradient */}
           <View className="w-[48%] rounded-md overflow-hidden mb-4 shadow-3xl"
-            style={{ background: undefined }}
+            style={{ backgroundColor: undefined }}
           >
             <View className="p-4 bg-primary">
               <View className="flex-row items-center justify-between mb-2">
