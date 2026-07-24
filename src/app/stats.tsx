@@ -50,11 +50,6 @@ export default function StatsScreen() {
     setup();
   }, []);
 
-  useEffect(() => {
-    if (db) {
-      loadStats(db, fromDate.getTime(), toDate.getTime());
-    }
-  }, [fromDate, toDate, db]);
 
   const loadStats = async (database: SQLite.SQLiteDatabase, start: number, end: number) => {
     const s = await getAdvancedStats(database, start, end);
@@ -91,6 +86,12 @@ export default function StatsScreen() {
 
     setFromDate(start);
     setToDate(end);
+  };
+
+  const handleGenerate = () => {
+    if (db) {
+      loadStats(db, fromDate.getTime(), toDate.getTime());
+    }
   };
 
   const formatKsh = (n: number) =>
@@ -140,7 +141,7 @@ export default function StatsScreen() {
             </ScrollView>
 
             {/* From / To */}
-            <View className="flex-row items-center gap-2">
+            <View className="flex-row items-center gap-2 mb-4">
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => setShowFromPicker(true)}
@@ -175,6 +176,16 @@ export default function StatsScreen() {
                 </View>
               </TouchableOpacity>
             </View>
+
+            {/* Generate Button */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleGenerate}
+              className="bg-primary flex-row justify-center items-center py-3 rounded-md shadow-sm gap-2"
+            >
+              <Ionicons name="stats-chart" size={16} color="#ffffff" />
+              <Text className="text-white font-nunito-bold text-sm tracking-wide">Generate Stats</Text>
+            </TouchableOpacity>
           </View>
         </View>
 

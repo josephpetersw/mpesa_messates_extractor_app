@@ -7,7 +7,7 @@ import SmsExtractorModule from '../../modules/sms-extractor/src/SmsExtractorModu
 import { initDatabase } from '../database/schema';
 import { MpesaDbMessage, insertMessages, getStats, getMessages, getAllMessages } from '../database/queries';
 import { parseMpesaMessage } from '../services/mpesaParser';
-import { exportToCsv, exportToTxt } from '../services/exportService';
+import { exportToCsv, exportToTxt, exportToGoogleContactsCsv } from '../services/exportService';
 import CustomDatePicker from '../components/CustomDatePicker';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -212,6 +212,19 @@ export default function HomeScreen() {
     );
   };
 
+  const handleExportContacts = () => {
+    if (!db) return;
+    showConfirm(
+      "Export Contacts",
+      "Export unique contacts to a Google Contacts CSV file?",
+      async () => {
+        const all = await getAllMessages(db);
+        await exportToGoogleContactsCsv(all);
+      }
+    );
+  };
+
+
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center bg-vristo-bg dark:bg-vristo-bg-dark">
@@ -235,7 +248,7 @@ export default function HomeScreen() {
 
           {/* Total Panel — Blue gradient */}
           <View className="w-[48%] rounded-md overflow-hidden mb-4 shadow-3xl"
-            style={{ background: undefined }}
+            style={{ backgroundColor: undefined }}
           >
             <View className="p-4 bg-primary">
               <View className="flex-row items-center justify-between mb-2">
@@ -386,21 +399,21 @@ export default function HomeScreen() {
         )}
 
         {/* Action Buttons — Vristo btn pattern */}
-        <View className="flex-row flex-wrap gap-2 mb-6">
+        <View className="flex-col gap-2 mb-6">
           <TouchableOpacity 
             onPress={confirmExtract} 
             disabled={extracting}
-            className="flex-1 flex-row items-center justify-center gap-2 bg-black dark:bg-[#1b2e4b] py-3 px-4 rounded-md border border-black/50 dark:border-vristo-border-dark shadow-3xl"
+            className="flex-row items-center justify-center gap-2 bg-black dark:bg-[#1b2e4b] py-3 px-4 rounded-md border border-black/50 dark:border-vristo-border-dark shadow-3xl"
           >
             {extracting ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <>
                 <Ionicons name="download-outline" size={16} color="#fff" />
-                <View>
+                <View className="items-center">
                   <Text className="text-white font-nunito-bold text-sm">Extract SMS</Text>
                   {lastExtract && (
-                    <Text className="text-white/50 text-[9px] font-nunito">
+                    <Text className="text-white/50 text-[10px] font-nunito mt-0.5">
                       Last: {new Date(lastExtract).toLocaleString()}
                     </Text>
                   )}
@@ -409,21 +422,31 @@ export default function HomeScreen() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            onPress={handleExportCsv} 
-            className="flex-row items-center gap-1.5 bg-info py-3 px-4 rounded-md shadow-3xl"
-          >
-            <Ionicons name="document-text-outline" size={15} color="#fff" />
-            <Text className="text-white font-nunito-bold text-sm">CSV</Text>
-          </TouchableOpacity>
+          <View className="flex-row gap-2">
+            <TouchableOpacity 
+              onPress={handleExportCsv} 
+              className="flex-1 flex-row items-center justify-center gap-1.5 bg-info py-3 px-2 rounded-md shadow-3xl"
+            >
+              <Ionicons name="document-text-outline" size={15} color="#fff" />
+              <Text className="text-white font-nunito-bold text-sm">CSV</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            onPress={handleExportTxt} 
-            className="flex-row items-center gap-1.5 bg-secondary py-3 px-4 rounded-md shadow-3xl"
-          >
-            <Ionicons name="code-outline" size={15} color="#fff" />
-            <Text className="text-white font-nunito-bold text-sm">TXT</Text>
-          </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={handleExportTxt} 
+              className="flex-1 flex-row items-center justify-center gap-1.5 bg-secondary py-3 px-2 rounded-md shadow-3xl"
+            >
+              <Ionicons name="code-outline" size={15} color="#fff" />
+              <Text className="text-white font-nunito-bold text-sm">TXT</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={handleExportContacts} 
+              className="flex-1 flex-row items-center justify-center gap-1.5 bg-warning py-3 px-2 rounded-md shadow-3xl"
+            >
+              <Ionicons name="people-outline" size={15} color="#fff" />
+              <Text className="text-white font-nunito-bold text-sm">Contacts</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Transactions Table — Vristo table style */}
@@ -457,8 +480,8 @@ export default function HomeScreen() {
                 {msg.amount?.toLocaleString()}
               </Text>
               <View className="w-16 items-center">
-                <View className={`px-2 py-0.5 rounded ${msg.transaction_type === 'Sent' ? 'bg-danger/10' : 'bg-success/10'}`}>
-                  <Text className={`text-[10px] font-nunito-bold ${msg.transaction_type === 'Sent' ? 'text-danger' : 'text-success'}`}>
+                <View className={`px-2 py-0.5 rounded ${msg.transaction_type === 'Sent' ? 'bg-danger/10' : msg.transaction_type === 'Failed' ? 'bg-warning/10' : 'bg-success/10'}`}>
+                  <Text className={`text-[10px] font-nunito-bold ${msg.transaction_type === 'Sent' ? 'text-danger' : msg.transaction_type === 'Failed' ? 'text-warning' : 'text-success'}`}>
                     {msg.transaction_type}
                   </Text>
                 </View>

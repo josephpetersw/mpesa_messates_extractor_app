@@ -6,7 +6,7 @@ export type MpesaDbMessage = {
   original_body: string;
   parsed_name: string;
   parsed_number: string;
-  transaction_type: 'Sent' | 'Received' | 'Other';
+  transaction_type: 'Sent' | 'Received' | 'Failed' | 'Other';
   amount: number;
   date: number;
   source: string;
@@ -16,7 +16,7 @@ export async function insertMessages(db: SQLite.SQLiteDatabase, messages: Omit<M
   // Use a transaction for bulk insert
   await db.withTransactionAsync(async () => {
     const statement = await db.prepareAsync(
-      `INSERT OR IGNORE INTO messages (sms_id, original_body, parsed_name, parsed_number, transaction_type, amount, date, source) 
+      `INSERT OR REPLACE INTO messages (sms_id, original_body, parsed_name, parsed_number, transaction_type, amount, date, source) 
        VALUES ($sms_id, $original_body, $parsed_name, $parsed_number, $transaction_type, $amount, $date, $source)`
     );
     try {
