@@ -1,14 +1,14 @@
 export type ParsedMpesaData = {
   parsed_name: string;
   parsed_number: string;
-  transaction_type: 'Sent' | 'Received' | 'Other';
+  transaction_type: 'Sent' | 'Received' | 'Failed' | 'Other';
   amount: number;
 };
 
 export function parseMpesaMessage(body: string): ParsedMpesaData {
   let parsed_name = 'Unknown';
   let parsed_number = 'Unknown';
-  let transaction_type: 'Sent' | 'Received' | 'Other' = 'Other';
+  let transaction_type: 'Sent' | 'Received' | 'Failed' | 'Other' = 'Other';
   let amount = 0;
 
   try {
@@ -50,6 +50,26 @@ export function parseMpesaMessage(body: string): ParsedMpesaData {
       parsed_number = withdrawMatch[2].trim(); // Agent number
       parsed_name = withdrawMatch[3].trim(); // Agent Name
       transaction_type = 'Sent'; // Treat withdrawal as outflow/sent
+      return { parsed_name, parsed_number, transaction_type, amount };
+    }
+
+    // Failed
+    // Example: Transaction failed, M-PESA cannot complete payment of Ksh120.00 to ONETAP TECHNOLOGIES . Please try again shortly.
+    // Example: Failed, you have entered the wrong PIN.
+    const failedRegex = /Failed|Transaction failed/i;
+    if (failedRegex.test(body)) {
+      transaction_type = 'Failed';
+      const failedAmountMatch = body.match(/Ksh([\d,.]+)/i);
+      if (failedAmountMatch) {
+        amount = parseFloat(failedAmountMatch[1].replace(/,/g, ''));
+      }
+      const failedToMatch = body.match(/to\s+(.+?)\s+\./i) || body.match(/to\s+(.+?)\s+Please/i);
+      if (failedToMatch) {
+        parsed_name = failedToMatch[1].trim();
+      } else {
+        parsed_name = 'N/A';
+      }
+      parsed_number = 'N/A';
       return { parsed_name, parsed_number, transaction_type, amount };
     }
 

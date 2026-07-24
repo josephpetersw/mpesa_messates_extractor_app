@@ -478,8 +478,8 @@ export default function HomeScreen() {
                 {msg.amount?.toLocaleString()}
               </Text>
               <View className="w-16 items-center">
-                <View className={`px-2 py-0.5 rounded ${msg.transaction_type === 'Sent' ? 'bg-danger/10' : 'bg-success/10'}`}>
-                  <Text className={`text-[10px] font-nunito-bold ${msg.transaction_type === 'Sent' ? 'text-danger' : 'text-success'}`}>
+                <View className={`px-2 py-0.5 rounded ${msg.transaction_type === 'Sent' ? 'bg-danger/10' : msg.transaction_type === 'Failed' ? 'bg-warning/10' : 'bg-success/10'}`}>
+                  <Text className={`text-[10px] font-nunito-bold ${msg.transaction_type === 'Sent' ? 'text-danger' : msg.transaction_type === 'Failed' ? 'text-warning' : 'text-success'}`}>
                     {msg.transaction_type}
                   </Text>
                 </View>

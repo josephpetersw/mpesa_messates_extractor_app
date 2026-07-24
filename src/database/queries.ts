@@ -6,7 +6,7 @@ export type MpesaDbMessage = {
   original_body: string;
   parsed_name: string;
   parsed_number: string;
-  transaction_type: 'Sent' | 'Received' | 'Other';
+  transaction_type: 'Sent' | 'Received' | 'Failed' | 'Other';
   amount: number;
   date: number;
   source: string;
