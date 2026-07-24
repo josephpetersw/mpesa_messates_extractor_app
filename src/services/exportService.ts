@@ -56,14 +56,25 @@ export async function exportToGoogleContactsCsv(messages: MpesaDbMessage[]) {
   
   messages.forEach(msg => {
     let number = msg.parsed_number ? msg.parsed_number.trim() : '';
-    if (!number) return; // Skip if no number
+    if (!number || number === 'N/A' || number === 'Unknown') return; // Skip empty or invalid numbers
     
-    // Format to +254
-    if (number.startsWith('0')) number = '+254' + number.substring(1);
-    else if (number.startsWith('254')) number = '+' + number;
-    else if (!number.startsWith('+')) number = '+254' + number;
+    // Strict whitelist: must be a valid Kenyan mobile number
+    // Allows formats: 07XX, 01XX, 2547XX, 2541XX, +2547XX, +2541XX
+    const isMobileRegex = /^(?:\+254|254|0)?([17]\d{8})$/;
+    const match = number.match(isMobileRegex);
+    if (!match) return; // Skip account numbers and non-mobile numbers
+    
+    // Normalize to +254 format using the 9-digit core number captured by the regex
+    number = '+254' + match[1];
     
     const name = msg.parsed_name ? msg.parsed_name.toUpperCase() : 'UNKNOWN';
+    
+    // Filter out common business/bank keywords in the name
+    const businessKeywords = ['BANK', 'PLC', 'LTD', 'LIMITED', 'FOR ACCOUNT', 'ACCOUNT', 'ACC', 'PAYBILL', 'TILL', 'C2B', 'B2C'];
+    const isBusiness = businessKeywords.some(keyword => name.includes(keyword));
+    if (isBusiness) return;
+    
+
     
     // Only set if we don't have it, or if current is UNKNOWN and new one is not
     if (!uniqueContacts.has(number) || (name !== 'UNKNOWN' && uniqueContacts.get(number) === 'UNKNOWN')) {
