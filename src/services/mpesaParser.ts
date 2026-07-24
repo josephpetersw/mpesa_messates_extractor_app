@@ -15,7 +15,7 @@ export function parseMpesaMessage(body: string): ParsedMpesaData {
     // Check for Sent
     // Example: ... Ksh1,000.00 sent to John Doe 0712345678 on ...
     // Example: ... Ksh1,000.00 paid to M-KOPA ... (Paybill)
-    const sentRegex = /Ksh([\d,.]+)\s+(?:sent|paid)\s+to\s+([A-Za-z0-9\s*]+?)(?:\s+(\d{10,}))?\s+on/i;
+    const sentRegex = /Ksh([\d,.]+)\s+(?:sent|paid)\s+to\s+(.+?)(?:\s+(\+?\d{7,}))?\s+on/i;
     const sentMatch = body.match(sentRegex);
 
     if (sentMatch) {
@@ -27,8 +27,9 @@ export function parseMpesaMessage(body: string): ParsedMpesaData {
     }
 
     // Check for Received
-    // Example: ... You have received Ksh500.00 from Jane Doe 0723456789 on ...
-    const receivedRegex = /received\s+Ksh([\d,.]+)\s+from\s+([A-Za-z0-9\s*]+?)(?:\s+(\d{10,}))?\s+on/i;
+    // Format 1: ... You have received Ksh500.00 from Jane Doe 0723456789 on ...
+    // Format 2: ... Ksh15.00 received from REHEMA AWINO 254725086093. Account Number ...
+    const receivedRegex = /(?:received\s+Ksh|Ksh)([\d,.]+)\s+(?:received\s+)?from\s+(.+?)(?:\s+(\+?\d{7,}))?(?:\s+on|\.)/i;
     const receivedMatch = body.match(receivedRegex);
 
     if (receivedMatch) {
@@ -41,7 +42,7 @@ export function parseMpesaMessage(body: string): ParsedMpesaData {
 
     // Withdrawal
     // Example: ... Withdraw Ksh500.00 from 123456 - Agent Name on ...
-    const withdrawRegex = /Withdraw\s+Ksh([\d,.]+)\s+from\s+(\d+)\s+-\s+([A-Za-z0-9\s*]+)\s+on/i;
+    const withdrawRegex = /Withdraw\s+Ksh([\d,.]+)\s+from\s+(\+?\d+)\s+-\s+(.+?)\s+on/i;
     const withdrawMatch = body.match(withdrawRegex);
 
     if (withdrawMatch) {
